@@ -21,6 +21,7 @@ from urllib.parse import unquote, quote
 import requests
 from bs4 import BeautifulSoup
 from opencc import OpenCC
+from clean_shuihu_text import trim_paragraphs
 
 ROOT = Path(__file__).resolve().parent.parent
 API = "https://zh.wikisource.org/w/api.php"
@@ -115,6 +116,7 @@ def extract_chapter(session, edition, n, title):
         clean = CC.convert(raw)
         if len(clean) >= 8:
             paragraphs.append(clean)
+    paragraphs = trim_paragraphs(paragraphs)
     chars = sum(len(p) for p in paragraphs)
     if chars < 1500 or len(paragraphs) < 5:
         raise RuntimeError(f"Incomplete chapter: {n}, {chars} characters and {len(paragraphs)} paragraphs")
