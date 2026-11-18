@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>原文对照阅读 · 毛选读注</title>
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.compare-wrap{max-width:1660px;margin:0 auto;padding:18px 20px 28px}
+.compare-header h1{font-size:28px;margin:2px 0 10px}
+.compare-header p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.compare-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:12px 15px;background:var(--surface);border:1px solid var(--line);border-radius:9px}
+.compare-controls label{font-size:12px;color:var(--muted);display:flex;gap:4px;flex-direction:column}
+.compare-controls select,.compare-controls input[type=number]{min-height:36px;padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);font-size:14px}
+.compare-controls input[type=file]{max-width:300px;font-size:13px;color:var(--ink)}
+.compare-controls button{padding:6px 12px;background:var(--accent);border:0;color:white;border-radius:5px;cursor:pointer}
+.compare-status{margin:9px 0 12px;font-size:13px;color:var(--muted)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}
+.compare-pane{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;min-width:0}
+.compare-pane-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.compare-pane-head b{font-size:14px}
+.compare-pane-head a{font-size:12px;white-space:nowrap}
+.compare-pane iframe{width:100%;height:73vh;min-height:480px;display:block;border:0;background:white}
+#empty-pdf{height:73vh;min-height:480px;display:grid;place-content:center;padding:30px;color:var(--muted);text-align:center;line-height:2}
+#fifth-notes{padding:25px;font-size:15px;line-height:1.9}
+#fifth-notes[hidden],#pdf-view[hidden],#article-view[hidden],#empty-pdf[hidden],#first-controls[hidden],#fifth-controls[hidden]{display:none}
+.compare-help{margin:12px 0 0;color:var(--muted);font-size:12px}
+@media(max-width:840px){.compare-grid{grid-template-columns:1fr}.compare-wrap{padding:14px 10px}.compare-pane iframe,#empty-pdf{height:60vh;min-height:340px}.compare-controls input[type=file]{max-width:240px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+<a class="brand" href="index.html">毛选读注<small>《毛泽东选集》逐篇注解</small></a>
+<nav class="sitenav" aria-label="网站栏目"><a href="index.html">首页</a><a href="v1/01.html">第一卷</a><a href="method.html">总论：思维方法</a><a href="compare.html" aria-current="page">原文对照</a></nav>
+</header>
+<div class="compare-wrap">
+  <div class="compare-header">
+    <div class="eyebrow">本地原文 · 在线注解</div>
+    <h1>原文与分析，对照阅读</h1>
+    <p>左侧读取你自己选择的 PDF，右侧查看本站注解。PDF 只在当前浏览器内打开，不会上传到 GitHub 或网站服务器。刷新页面后需要重新选择文件。</p>
+  </div>
+  <div class="compare-controls">
+    <label>选择版本
+      <select id="source-choice">
+        <option value="vol14">1967年一卷本（第一至四卷合订）</option>
+        <option value="vol5">1977年第五卷</option>
+      </select>
+    </label>
+    <label>选择本地原文 PDF
+      <input id="pdf-file" type="file" accept=".pdf,application/pdf" aria-label="选择本地PDF原文">
+    </label>
+    <label id="first-controls">对应篇目
+      <select id="article-choice"></select>
+    </label>
+    <label id="fifth-controls" hidden>第五卷书内印页（1—394）
+      <span><input id="fifth-page" type="number" min="1" max="394" value="1" style="width:92px"> <button id="jump-fifth" type="button">跳转</button></span>
+    </label>
+  </div>
+  <div class="compare-status" id="status" role="status">请选择本地 PDF 开始阅读。第一卷已建立17篇的页码对应。</div>
+  <div class="compare-grid">
+    <section class="compare-pane" aria-label="原文PDF">
+      <div class="compare-pane-head"><b>左侧：原文 PDF</b><span id="page-info">第一卷</span></div>
+      <div id="empty-pdf"><p>请点击上方“选择本地原文 PDF”<br>文件只在你的设备上打开</p></div>
+      <iframe id="pdf-view" title="本地原文 PDF 阅读器" hidden></iframe>
+    </section>
+    <section class="compare-pane" aria-label="文章注解">
+      <div class="compare-pane-head"><b>右侧：注解与分析</b><a id="article-link" href="v1/17.html" target="_blank" rel="noopener">在新页面打开分析</a></div>
+      <iframe id="article-view" title="毛选读注逐篇分析" src="v1/17.html" loading="lazy"></iframe>
+      <div id="fifth-notes" hidden>
+        <h2>第五卷：原文核对</h2>
+        <p>已提供1977年版第五卷的本地 PDF 阅读与页码跳转。本站尚未完成第五卷的逐篇深读，因此现在不把总论误当成某篇的分析。</p>
+        <p>可以先核对原文。将来新增第五卷的逐篇注解后，再接入右侧对照。</p>
+        <p><a href="method.html">查看《总论：思维方法》</a></p>
+      </div>
+    </section>
+  </div>
+  <p class="compare-help">页码说明：书内印页不等于 PDF 阅读器页码。第一卷17篇的起始页已按上传的1967年版本逐页核对；第五卷书内第1页对应PDF第10页。浏览器自带PDF工具可继续翻页、放大和搜索。</p>
+</div>
+<script>
+(function(){
+  'use strict';
+  var articles=[
+    [1,'中国社会各阶级的分析',3,26],
+    [2,'湖南农民运动考察报告',12,35],
+    [3,'中国的红色政权为什么能够存在？',47,69],
+    [4,'井冈山的斗争',57,79],
+    [5,'关于纠正党内的错误思想',85,107],
+    [6,'星星之火，可以燎原',97,119],
+    [7,'必须注意经济工作',105,127],
+    [8,'怎样分析农村阶级',113,135],
+    [9,'我们的经济政策',116,138],
+    [10,'关心群众生活，注意工作方法',122,144],
+    [11,'论反对日本帝国主义的策略',128,150],
+    [12,'中国革命战争的战略问题',154,176],
+    [13,'关于蒋介石声明的声明',226,248],
+    [14,'中国共产党在抗日时期的任务',232,254],
+    [15,'为争取千百万群众进入抗日民族统一战线而斗争',249,271],
+    [16,'实践论',259,281],
+    [17,'矛盾论',274,296]
+  ];
+  var el=function(id){return document.getElementById(id)};
+  var source=el('source-choice'), chooser=el('article-choice'),file=el('pdf-file');
+  var frame=el('pdf-view'),articleFrame=el('article-view'),state=el('status');
+  var blobUrl=null, selected=17;
+  articles.forEach(function(a){
+    var op=document.createElement('option');op.value=String(a[0]);op.textContent=a[0]+'. '+a[1];
+    chooser.appendChild(op);
+  });
+  var fromLink=Number(new URLSearchParams(location.search).get('article'));
+  if(fromLink>=1 && fromLink<=17)selected=fromLink;
+  chooser.value=String(selected);
+  function pageForArticle(){
+    return articles.filter(function(a){return a[0]===selected})[0];
+  }
+  function refresh(){
+    var fifth=source.value==='vol5';
+    el('first-controls').hidden=fifth;
+    el('fifth-controls').hidden=!fifth;
+    el('fifth-notes').hidden=!fifth;
+    articleFrame.hidden=fifth;
+    el('article-link').hidden=fifth;
+    var page=fifth?Math.max(1,Math.min(394,Number(el('fifth-page').value)||1))+9:pageForArticle()[3];
+    if(fifth){
+      el('page-info').textContent='第五卷 · 书内第'+(page-9)+'页 · PDF第'+page+'页';
+    }else{
+      var a=pageForArticle();
+      el('page-info').textContent='书内第'+a[2]+'页 · PDF第'+a[3]+'页';
+      var articleUrl='v1/'+String(a[0]).padStart(2,'0')+'.html';
+      if(articleFrame.getAttribute('src')!==articleUrl)articleFrame.setAttribute('src',articleUrl);
+      el('article-link').href=articleUrl;
+      var url=new URL(location.href);url.searchParams.set('article',a[0]);history.replaceState(null,'',url.pathname+url.search);
+    }
+    if(blobUrl){
+      frame.src=blobUrl+'#page='+page+'&zoom=page-width';
+      frame.hidden=false;el('empty-pdf').hidden=true;
+      state.textContent='已打开本地PDF。右侧内容来自网站，左侧原文没有上传到互联网。';
+    }else{
+      frame.hidden=true;el('empty-pdf').hidden=false;
+      state.textContent='请选择与当前版本对应的本地 PDF。'+(fifth?'第五卷目前仅支持原文翻阅。':'第一卷17篇已建立页码对应。');
+    }
+  }
+  chooser.addEventListener('change',function(){selected=Number(chooser.value);refresh()});
+  source.addEventListener('change',function(){
+    // 防止意外用另一种版本的PDF页码定位：切换版本需重新选文件
+    if(blobUrl)URL.revokeObjectURL(blobUrl);
+    blobUrl=null;frame.removeAttribute('src');file.value='';refresh();
+  });
+  file.addEventListener('change',function(){
+    if(blobUrl)URL.revokeObjectURL(blobUrl);
+    blobUrl=null;
+    var f=file.files && file.files[0];
+    if(!f){refresh();return}
+    if(!(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){
+      file.value='';state.textContent='请选择PDF文件。';refresh();return;
+    }
+    blobUrl=URL.createObjectURL(f);
+    refresh();
+  });
+  el('jump-fifth').addEventListener('click',refresh);
+  el('fifth-page').addEventListener('change',refresh);
+  window.addEventListener('pagehide',function(){if(blobUrl)URL.revokeObjectURL(blobUrl)});
+  refresh();
+})();
+</script>
+</body></html>
