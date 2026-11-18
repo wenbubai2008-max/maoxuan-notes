@@ -217,10 +217,10 @@ def shelf_page():
         f'</a>'
         for b in books)
     body = (f'<main class="bookshelf-home">'
-            f'<h1 class="bookshelf-heading">书架</h1>'
+
             f'<div class="bookshelf-grid">{cards}</div>'
             f'</main>\n')
-    return head('书架 · 读书', '') + body + '</body>\n</html>\n'
+    return head('读书', '') + body + '</body>\n</html>\n'
 
 def method_page(arts):
     root = ''
