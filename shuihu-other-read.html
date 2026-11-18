@@ -5,7 +5,7 @@
 <title>水浒传 · 阅读</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/shuihu-more.css?v=3">
+<link rel="stylesheet" href="assets/shuihu-more.css?v=4">
 </head>
 <body class="sh-other">
 <header class="jin-bar"><div class="jin-bar-inner">
@@ -67,27 +67,44 @@
  fontSet();
  function node(type,cls,content){const el=document.createElement(type);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el}
 
- // 统一百回本、百二十回本的诗词与骈文排版。
- // 来源文本有「换行 + 多个全角空格」作为每行缩进；
- // 不可把这些空格交给 pre-wrap，否则只有首行靠左、后续行大幅右移。
+ // 百回本和百二十回本使用同一套诗词排版逻辑。
+ // 纸书的诗词缩进不能直接当成网页缩进；已丢失换行的规整诗句
+ // 则在显示层恢复断行，保存的原文与标点都不改。
  function isVerseParagraph(raw){
    const lines=String(raw).replace(/\r\n?/g,"\n").split("\n").filter(x=>x.trim());
    if(lines.length<2)return false;
    const indented=lines.slice(1).filter(line=>/^[ \t\u3000]{2,}\S/.test(line)).length;
    return indented>=1 && (indented>=Math.ceil((lines.length-1)/2) || lines.length<=3);
  }
- function appendReadingParagraph(frag,raw){
+ function compactVerse(raw,previous,index){
+   const text=String(raw).trim();
+   if(text.includes("\n")||text.length>220||/[“”]/.test(text))return null;
+   const m=text.match(/^(诗曰|诗云|有诗为证)[:：]\s*(.+)$/);
+   const caption=m?m[1]+"：":"";
+   const body=m?m[2]:text;
+   const parts=body.match(/[^。！？]+[。！？]/g);
+   if(!parts || parts.join("")!==body || parts.length<2 || parts.length>16)return null;
+   const lines=parts.map(part=>part.trim());
+   const regular=lines.length>=2&&lines.every(line=>/^[^，；。！？]{5,7}，[^，；。！？]{5,7}[。！？]$/.test(line));
+   const afterPoetryCue=/(?:有诗为证|诗曰|诗云|正是)[:：]?\s*$/.test(String(previous||"").trim());
+   const opener=index===0 && lines.length>=3 && body.length<200 && !/^(?:话说|却说|且说|当时)/.test(body);
+   if(!(regular||caption||afterPoetryCue||opener))return null;
+   return {caption,lines};
+ }
+ function appendReadingParagraph(frag,raw,index,previous){
    const text=String(raw).replace(/\r\n?/g,"\n");
-   if(!isVerseParagraph(text)){
-     // 意外硬换行只归并在普通正文；原有中文标点不动。
+   const multiline=isVerseParagraph(text);
+   const compact=multiline?null:compactVerse(text,previous,index);
+   if(!multiline&&!compact){
+     // 普通正文的软换行自动接起来，不制造缩进或异常断句。
      frag.appendChild(node("p","jin-text",text.replace(/[ \t\u3000]*\n[ \t\u3000]*/g,"")));
      return;
    }
    const verse=node("div","sh-verse");
-   // 每行以同一基线左对齐，整个诗词段落在阅读宽度中居中。
-   text.split("\n").map(line=>line.trim()).filter(Boolean).forEach(line=>{
-     verse.appendChild(node("span","sh-verse-line",line));
-   });
+   const caption=compact?.caption||"";
+   if(caption)verse.appendChild(node("span","sh-verse-caption",caption));
+   const lines=compact?.lines||text.split("\n").map(line=>line.trim()).filter(Boolean);
+   lines.forEach(line=>verse.appendChild(node("span","sh-verse-line",line)));
    frag.appendChild(verse);
  }
 
@@ -133,7 +150,7 @@
        frag.appendChild(oldComment(raw,"容与堂底本附评 · 原署名归属待考"));
        continue;
      }
-     appendReadingParagraph(frag,raw);
+     appendReadingParagraph(frag,raw,i,all[i-1]);
      for(const note of byIndex.get(i)||[]){
        frag.appendChild(oldComment(note.text,note.name+" · 经核实的原批"));
      }
