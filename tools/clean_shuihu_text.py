@@ -30,13 +30,28 @@ def trim_paragraphs(paragraphs: list[str]) -> list[str]:
         kept.pop()
     return kept
 
+def normalize_prose_breaks(text: str) -> str:
+    """Merge accidental hard wraps in prose while preserving indented rosters/verse.
+
+    Source pages often put a newline in the middle of a word or phrase, e.g.
+    “大相国寺\\n住持” or “包裹\\n、腰包”. We retain clearly structured
+    lines (two or more explicitly indented rows), not ordinary hard wraps.
+    """
+    value = str(text).replace("\\r\\n", "\\n").replace("\\r", "\\n")
+    lines = value.split("\\n")
+    if len(lines) >= 3 and sum(bool(re.match(r"^[ \\t\\u3000]{2,}\\S", line)) for line in lines[1:]) >= 2:
+        return value
+    return re.sub(r"[ \\t\\u3000]*\\n[ \\t\\u3000]*", "", value)
+
 def clean_record(data: dict) -> tuple[dict, int]:
     original = data.get("paragraphs")
     if not isinstance(original, list):
         return data, 0
-    cleaned = trim_paragraphs(original)
-    removed = len(original) - len(cleaned)
-    if not removed:
+    retained = trim_paragraphs(original)
+    removed = len(original) - len(retained)
+    cleaned = [normalize_prose_breaks(p) for p in retained]
+    normalized = sum(a != b for a, b in zip(retained, cleaned))
+    if not removed and not normalized:
         return data, 0
     data["paragraphs"] = cleaned
     if "original_characters" in data:
@@ -44,11 +59,11 @@ def clean_record(data: dict) -> tuple[dict, int]:
         data["original_characters"] = len(_MARKER.sub("", joined))
     if "characters" in data:
         data["characters"] = sum(len(p) for p in cleaned)
-    return data, removed
+    return data, removed + normalized
 
 def main():
     changed = 0
-    removed = 0
+    corrected = 0
     for edition in ["", "100", "120"]:
         directory = ROOT / "shuihu" / edition / "text" if edition else ROOT / "shuihu" / "text"
         if not directory.is_dir():
@@ -59,9 +74,9 @@ def main():
             if count:
                 file.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
                 changed += 1
-                removed += count
-                print(f"Cleaned {file.relative_to(ROOT)}: {count} footer paragraphs")
-    print(f"Done: {changed} files, {removed} trailing template paragraphs removed")
+                corrected += count
+                print(f"Cleaned {file.relative_to(ROOT)}: {count} footer/linebreak fixes")
+    print(f"Done: {changed} files, {corrected} footer/linebreak fixes")
 
 if __name__ == "__main__":
     main()
