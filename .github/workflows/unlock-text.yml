@@ -57,6 +57,8 @@ jobs:
           fi
           npx --yes staticrypt@3.5.4 text/[0-9]*.html --decrypt -d build/decrypted --password "$MAOXUAN_PASSWORD" --config .staticrypt.json
           cp build/decrypted/*.html text/
+          pip install --quiet cryptography
+          python3 tools/unlock_paras.py
           grep -qi staticrypt text/001.html && { echo "::error::解密失败，请检查密钥是否正确"; exit 1; } || true
           python3 tools/build.py
 

@@ -107,7 +107,7 @@ def render_sections(a, root='../'):
         else:
             slot_html = '<span class="slot">原文 · 暂未收入</span>'
         parts.append(f'<div class="sec"><div><h3><span class="sn">§{si}</span>{esc(s["h"])}</h3>'
-                     f'{slot_html}{q}<p class="summary">{summ}</p></div>'
+                     f'{slot_html}{q}<p class="summary">{summ}</p><div class="orig" data-sec="{si - 1}"></div></div>'
                      f'<ol class="notes">{"".join(lis)}</ol></div>')
     return '\n'.join(parts), num - 1
 
@@ -153,11 +153,16 @@ def article_page(a, arts):
     if idx + 1 < len(arts):
         n = arts[idx + 1]; prev_next.append(f'<a href="{n["no"]:02d}.html">{esc(n["title"])} →</a>')
     page = (head(f'{a["title"]} · 毛选读注', root) + topbar(root, 'v1') + '<div class="shell">' + toc(arts, root, a['no']) +
-            f'<main><div class="eyebrow">第一卷 · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
+            (f'<main data-para="{root}text/para/v1-{a["no"]:02d}.json">' if os.path.exists(os.path.join(ROOT, 'text', 'para', f'v1-{a["no"]:02d}.json')) else '<main>') +
+            f'<div class="eyebrow">第一卷 · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
             f'<h1>{esc(a["title"])}</h1><p class="date">（{esc(a["date"])}）</p>'
             f'<div class="meta">{meta}</div>'
             f'<div class="tabs" role="tablist" aria-label="本篇内容">{btns}</div>'
             f'<section class="panel" id="p-text" role="tabpanel" aria-labelledby="t-text">'
+            '<form class="orig-bar" id="orig-bar" hidden><label for="orig-pw">输入密码，在每一节下面直接显示对应的原文段落</label>'
+            '<div class="row"><input id="orig-pw" type="password" autocomplete="current-password" placeholder="密码">'
+            '<button type="submit">显示原文</button></div>'
+            '<label class="rem"><input type="checkbox" id="orig-rem" checked> 在这台设备上记住</label><p class="err" id="orig-err" hidden>密码不对，请再试一次。</p></form>'
             + (f'<div class="notice"><div><b>原文。</b><a href="{text_link_for(a["no"], root)}">阅读这篇的原文 →</a>{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>' if text_link_for(a['no'], root) else '<div class="notice"><div>下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>') +
             f'{secs}</section>\n{read}\n{bg}\n{extra_html}'
             f'<div class="pager">{"".join(prev_next)}</div></main></div>\n' + foot(root))
