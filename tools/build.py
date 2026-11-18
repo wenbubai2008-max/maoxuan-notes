@@ -224,7 +224,7 @@ def home_page(arts, arts5):
             st, cls = '原文可读 · 注解待做', 'todo'
         cards.append(f'<a class="volcard {cls}" href="v{n}/index.html"><span class="vn">第{"一二三四五"[n-1]}卷</span>'
                      f'<span class="vy">{years}</span><span class="vp">{period}</span>'
-                     f'<span class="vc">共 {total} 篇</span><span class="vs">{st}</span></a>')
+                     f'<span class="vc">共 {total} 篇</span><span class="vs">{st}</span>{'<span class="vx">含“屠龙卷”专题</span>' if n == 5 else ''}</a>')
     body = f'''<div class="shell wide"><main>
 <div class="eyebrow"><a href="index.html">书架</a> › 毛泽东选集</div>
 <h1>《毛泽东选集》逐篇注解与深读</h1>
@@ -287,7 +287,8 @@ def vol_index_page(n, arts_by):
               f'共 {len(items)} 篇。这一卷的注解还没有做，下面每篇都可以直接打开原文{lock}。')
     body = (f'<div class="shell wide"><main><div class="eyebrow"><a href="{root}maoxuan.html">毛泽东选集</a> › 第{cn}卷</div>'
             f'<h1>第{cn}卷 <small class="h1s">{years} · {period}</small></h1>{intro}'
-            f'<h2 class="vh">本卷脉络</h2><div class="overview">{overview}</div>'
+            + (f'<a class="card tulong" href="tulong.html"><b>专题：“屠龙卷”——第五卷里的反官僚主义一线</b><span>这一卷为什么被叫作“屠龙卷”，文本里说了什么，后来怎样实践，结果如何，今天能学到什么。</span></a>' if n == 5 else '') +
+            f'<details class="fold vol-ov"><summary>本卷脉络与收获<span class="hint">分阶段梳理这一卷，以及从中能学到什么（点开）</span></summary><div class="overview">{overview}</div></details>'
             f'<h2 class="vh">全部篇目</h2><p class="note-s">{status}</p>'
             f'<ol class="biglist textlist v5list">{"".join(rows)}</ol></main></div>\n')
     return head(f'第{cn}卷 · 毛选 · 读书', root) + topbar(root, f'v{n}') + body + foot(root)
@@ -349,6 +350,10 @@ def main():
         for a in lst:
             open(os.path.join(ROOT, f'v{vol}', f'{a["no"]:02d}.html'), 'w', encoding='utf-8').write(article_page(a, lst))
     arts_by = {(a['vol'], a['no']): a for a in arts + arts5}
+    tl = resolve_links(open(C('v5_tulong.html'), encoding='utf-8').read(), '../', arts_by)
+    os.makedirs(os.path.join(ROOT, 'v5'), exist_ok=True)
+    open(os.path.join(ROOT, 'v5', 'tulong.html'), 'w', encoding='utf-8').write(
+        head('“屠龙卷”专题 · 第五卷 · 毛选 · 读书', '../') + topbar('../', 'v5') + f'<div class="shell wide"><main class="long tulong-page">{tl}</main></div>\n' + foot('../'))
     for n in range(1, 6):
         os.makedirs(os.path.join(ROOT, f'v{n}'), exist_ok=True)
         open(os.path.join(ROOT, f'v{n}', 'index.html'), 'w', encoding='utf-8').write(vol_index_page(n, arts_by))

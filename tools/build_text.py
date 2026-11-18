@@ -144,6 +144,7 @@ def split_vol5(V):
         end = arts[n + 1][3] if n + 1 < len(arts) else len(V)
         head, paras, notes = parse_article(V, line + 1, end, t, head_flush=True)
         d = d.replace(' ', '').replace('0', '〇')
+        t = {'坚持艰苦奋共，密切联系群众': '坚持艰苦奋斗，密切联系群众', '我们党的—些历史经验': '我们党的一些历史经验'}.get(t, t)
         out.append({'vol': '5', 'title': t, 'date': d, 'headnote': head, 'paras': paras, 'notes': notes})
     return out
 
