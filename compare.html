@@ -37,7 +37,7 @@
   <div class="compare-header">
     <div class="eyebrow">本地原文 · 在线注解</div>
     <h1>原文与分析，对照阅读</h1>
-    <p>左侧读取你自己选择的 PDF，右侧查看本站注解。《矛盾论》已提供1967年版原文网页对照；其他篇目仍可选择本地 PDF。你选择的本地文件只在浏览器内打开，不会另行上传。</p>
+    <p>左侧读取你自己选择的 PDF，右侧查看本站注解。第一卷17篇已提供1967年版原文网页对照，直接打开即可阅读。也可以选择本地 PDF 查看原书影印版；你选择的本地文件不会另行上传。</p>
   </div>
   <div class="compare-controls">
     <label>选择版本
@@ -74,7 +74,7 @@
       </div>
     </section>
   </div>
-  <p class="compare-help">页码说明：书内印页不等于 PDF 阅读器页码。《矛盾论》网页文字来源于用户提供的1967年版PDF，自动提取可能存在错字或脚注排版差异；严谨引用时应核对扫描版。第五卷书内第1页对应 PDF 第10页。</p>
+  <p class="compare-help">页码说明：书内印页不等于 PDF 阅读器页码。第一卷文字原文来源于1967年版PDF，自动提取可能存在错字或脚注排版差异；严谨引用时应核对扫描版。第五卷书内第1页对应 PDF 第10页。</p>
 </div>
 <script>
 (function(){
@@ -83,9 +83,9 @@
     [1,'中国社会各阶级的分析',3,26],
     [2,'湖南农民运动考察报告',12,35],
     [3,'中国的红色政权为什么能够存在？',47,69],
-    [4,'井冈山的斗争',57,79],
-    [5,'关于纠正党内的错误思想',85,107],
-    [6,'星星之火，可以燎原',97,119],
+    [4,'井冈山的斗争',56,78],
+    [5,'关于纠正党内的错误思想',83,105],
+    [6,'星星之火，可以燎原',94,116],
     [7,'必须注意经济工作',105,127],
     [8,'怎样分析农村阶级',113,135],
     [9,'我们的经济政策',116,138],
@@ -134,14 +134,14 @@
       frame.src=blobUrl+'#page='+page+'&zoom=page-width';
       frame.hidden=false;el('empty-pdf').hidden=true;
       state.textContent='当前使用你选择的本地PDF。';
-    }else if(!fifth && selected===17){
-      var hosted='originals/v1/17.html';
+    }else if(!fifth){
+      var hosted='originals/v1/'+String(selected).padStart(2,'0')+'.html';
       if(frame.getAttribute('src')!==hosted)frame.setAttribute('src',hosted);
       frame.hidden=false;el('empty-pdf').hidden=true;
-      state.textContent='正在对照阅读《矛盾论》：左侧为1967年版文字提取，右侧为注解。可选择本地PDF查看影印版。';
+      state.textContent='第一卷17篇已提供1967年版文字原文；左侧是原文，右侧是注解。你也可以选择本地PDF查看影印版。';
     }else{
       frame.removeAttribute('src');frame.hidden=true;el('empty-pdf').hidden=false;
-      state.textContent='请选择与当前版本对应的本地 PDF。'+(fifth?'第五卷目前仅支持原文翻阅。':'其他篇目原文的网页版本尚待导入。');
+      state.textContent='第五卷尚未制作网页原文。请选择本地 PDF 对照。';
     }
   }
   chooser.addEventListener('change',function(){selected=Number(chooser.value);refresh()});
