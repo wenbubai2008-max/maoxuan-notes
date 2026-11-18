@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>水浒传 · 容与堂本</title><meta name="description" content="《水浒传》容与堂百回本独立简体阅读，正文随文附有明确标明的点评。">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shuihu-more.css?v=1">
+</head>
+<body class="sh-other sh-green" data-edition="100">
+<header class="jin-bar"><div class="jin-bar-inner"><a class="jin-back" href="index.html">← 返回书架</a><span class="jin-toplink">容与堂百回本</span></div></header>
+<main class="jin-wrap">
+<section class="jin-book">
+ <a class="jin-cover" href="shuihu-other-read.html?edition=100&chapter=1" aria-label="从第一回开始阅读"><span>水浒传</span></a>
+ <div><span class="jin-label">容与堂百回本</span><h1>水浒传</h1>
+ <p>100回 · 简体原文 · 按版本独立阅读</p>
+ <a class="jin-intro-link" href="shuihu-other-read.html?edition=100&chapter=1">从第一回开始 →</a></div>
+</section>
+<h2 id="chapters" class="jin-toc-title">目录</h2>
+<div class="jin-toc-tools"><input id="chapter-search" class="jin-search" type="search" placeholder="搜索章节或人物" aria-label="搜索本书回目"></div>
+<p class="sh-edition-count" id="index-status">第1至100回</p>
+<ol id="chapter-list" class="jin-toc" aria-label="全书100回目录"></ol>
+<p id="chapter-empty" class="jin-endnote" hidden>没有找到对应的回目。</p>
+<p class="jin-endnote">本书独立使用容与堂百回本的回目与原文，不混入金圣叹七十回本。本站读注另行注明；尚未核实的明代评语不冒充原批。</p>
+</main>
+<script src="assets/shuihu-more-data.js"></script>
+<script>
+(function(){
+ "use strict";
+ const edition="100", base=window.SHUIHU_MORE?.[edition];
+ const max=base?.max||100;
+ const q=document.getElementById("chapter-search"),list=document.getElementById("chapter-list"),empty=document.getElementById("chapter-empty"),state=document.getElementById("index-status");
+ let names=new Map((base.chapters||[]).map(c=>[c.number,c.title]));
+ function render(){
+   const filter=q.value.trim().toLowerCase();
+   const frag=document.createDocumentFragment();let count=0;
+   for(let n=1;n<=max;n++){
+     const title=names.get(n)||"";
+     const label="第"+n+"回";
+     if(!(label+" "+title).toLowerCase().includes(filter))continue;
+     count++;
+     const a=document.createElement("a");a.href="shuihu-other-read.html?edition="+edition+"&chapter="+n;
+     const num=document.createElement("span");num.className="jin-num";num.textContent=label;
+     const name=document.createElement("span");name.className="jin-chapter-name";name.textContent=title||"打开这一回";
+     a.append(num,name);
+     const li=document.createElement("li");li.append(a);frag.appendChild(li);
+   }
+   list.replaceChildren(frag);empty.hidden=count!==0;
+ }
+ q.addEventListener("input",render);render();
+ fetch("shuihu/"+edition+"/index.json").then(r=>r.ok?r.json():null).then(j=>{
+   if(!j||!Array.isArray(j.chapters))return;
+   names=new Map(j.chapters.map(c=>[Number(c.number),c.title]));
+   state.textContent="容与堂百回本 · "+names.size+"个回目";
+   render();
+ }).catch(()=>{state.textContent="容与堂百回本 · 第1至"+max+"回"});
+})();
+</script>
+</body></html>
