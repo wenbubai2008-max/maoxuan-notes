@@ -1,12 +1,16 @@
 # 读书 · 毛泽东选集
 
-《毛泽东选集》五卷逐篇注解与深读。网站：https://wenbubai2008-max.github.io/reading/
+《毛泽东选集》逐篇注解与《水浒传》金圣叹七十回本阅读。网站：https://wenbubai2008-max.github.io/reading/
 
 ## 结构
 
 ```
 index.html            书架首页（生成，书目见 content/books.json）
 maoxuan.html          《毛泽东选集》本书首页（生成）
+shuihu.html           《水浒传》专题首页、七十回目录与版本解说
+shuihu-read.html      《水浒传》阅读页（从维基文库实时读取金批七十回本）
+assets/shuihu.css     小说专题版面样式
+assets/shuihu-data.js 七十回目录和来源地址
 method.html           总论：思维方法（生成）
 v1/NN.html            第一卷各篇（生成）
 assets/site.css/.js   共享样式和脚本
@@ -50,3 +54,7 @@ python3 tools/make_text_site.py
 MAOXUAN_PASSWORD=密码 bash tools/encrypt_text.sh
 python3 tools/build.py
 ```
+
+## 水浒传
+
+以金圣叹评《第五才子书施耐庵水浒传》七十回本为阅读主线，目录含楔子及七十回。通过维基文库 MediaWiki API 实时读取公有领域原文，尝试将原文和 `〖…〗` 形式的金批分开显示；如访问源站失败，提供该回原文链接回退。不同回目的页面及评点排版仍需人工抽样校对。版本介绍附容与堂百回本与袁无涯百二十回本的对读入口；三个版本不可混用为同一底本。
