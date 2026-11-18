@@ -19,6 +19,7 @@ from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
 from opencc import OpenCC
+from clean_shuihu_text import trim_paragraphs
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "shuihu" / "text"
@@ -109,11 +110,11 @@ def extract(number: int, html: str) -> dict:
         pos = match.end()
     tokens.append(raw[pos:])
     plain = "".join(tokens)
-    paragraphs = [p.strip() for p in plain.split("\n\n") if p.strip()]
+    paragraphs = trim_paragraphs([p.strip() for p in plain.split("\n\n") if p.strip()])
     # Check for remnants of unclosed note markup before publishing.
     # A few chapters contain literal/nested editorial brackets. Preserve them
     # unchanged rather than discard the whole chapter or silently amend text.
-    total_len = len(re.sub(r"⟦J\d+⟧", "", plain))
+    total_len = len(re.sub(r"⟦J\d+⟧", "", "\n\n".join(paragraphs)))
     if total_len < 700:
         raise ValueError(f"Chapter {number}: short text after annotation cleanup ({total_len})")
     if len(paragraphs) > 800:
