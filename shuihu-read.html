@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/shuihu-jin.css?v=3">
+<link rel="stylesheet" href="assets/shuihu-jin.css?v=4">
 </head>
 <body>
 <header class="jin-bar"><div class="jin-bar-inner">
@@ -69,23 +69,36 @@
    if(text!==undefined)node.textContent=text;
    return node;
  }
+ function isVerseOrList(raw){
+   // 旧版电子文本常在正文句中硬断行；只有有明确缩进的
+   // 诗歌、石碣名单或职务表才保留原始分行。
+   if(!raw.includes("\n"))return false;
+   const lines=raw.split(/\r?\n/);
+   return lines.length>=3 && lines.slice(1).filter(line=>/^[ \t　]{2,}\S/.test(line)).length>=2;
+ }
+ function normalProse(raw,formatted){
+   const str=String(raw||"").replace(/\r\n?/g,"\n");
+   if(formatted)return str;
+   // 不额外添加空格，避免“相国寺 住持”“包裹 、腰包”。
+   return str.replace(/[ \t　]*\n[ \t　]*/g,"");
+ }
  function render(data){
    if(!Array.isArray(data.paragraphs)||!data.paragraphs.length)throw new Error("原文数据为空");
    const notes=Array.isArray(data.jin_notes)?data.jin_notes:[];
-   const notesById=new Map(notes.map((note,i)=>[Number(note.id===undefined?i:note.id),note]));
+   const byId=new Map(notes.map((note,i)=>[Number(note.id===undefined?i:note.id),note]));
    const paragraphs=window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs;
    const target=$("chapter-content"),frag=document.createDocumentFragment();
-   let noteCount=0;
-   function noteElement(note){
-     noteCount++;
-     const kind=String(note.kind||"金批");
+   let count=0;
+   function makeNote(note){
+     const kind=String(note.kind||"夹批");
      const content=String(note.text||"").trim();
-     const isBlock=kind==="总批"||kind==="眉批"||content.length>82||content.includes("\n");
-     if(isBlock){
-       const box=el("aside","jin-comment-block");
-       const heading=el("strong","jin-kind","【"+(kind==="金批"?"金批":kind)+"】");
-       box.append(heading,document.createTextNode(content));
-       return {element:box,block:true};
+     const block=kind==="总批"||kind==="眉批"||content.length>82||content.includes("\n");
+     count++;
+     if(block){
+       const section=el("aside","jin-comment-block");
+       section.appendChild(el("strong","jin-kind","【"+kind+"】"));
+       section.appendChild(document.createTextNode(content));
+       return {element:section,block:true};
      }
      const inline=el("span","jin-comment-inline",content);
      inline.setAttribute("aria-label","金圣叹"+kind+"："+content);
@@ -93,26 +106,47 @@
    }
    for(const raw of paragraphs){
      if(typeof raw!=="string"||!raw.trim())continue;
-     let p=el("p","jin-text");
-     const parts=raw.split(/(⟦J\d+⟧)/g);
-     for(const part of parts){
+     const visible=raw.replace(/⟦J\d+⟧/g,"");
+     const formatted=isVerseOrList(visible);
+     const p=el("p",formatted?"jin-text jin-formatted":"jin-text");
+     const longNotes=[];
+     let proseSoFar="";
+     for(const part of raw.split(/(⟦J\d+⟧)/g)){
        const marker=part.match(/^⟦J(\d+)⟧$/);
-       if(!marker){if(part)p.appendChild(document.createTextNode(part));continue}
-       const note=notesById.get(Number(marker[1]));
-       if(!note){p.appendChild(document.createTextNode(part));continue}
-       const item=noteElement(note);
+       if(!marker){
+         if(part){
+           const str=normalProse(part,formatted);
+           p.appendChild(document.createTextNode(str));
+           proseSoFar+=str;
+         }
+         continue;
+       }
+       const note=byId.get(Number(marker[1]));
+       if(!note)continue;
+       const item=makeNote(note);
        if(item.block){
-         if(p.textContent.trim()){frag.appendChild(p);p=el("p","jin-text")}
-         frag.appendChild(item.element);
+         // 将长评延后到同一原始自然段结束，绝不在“包裹、腰包”之间
+         // 插入 block 或创建新的正文 <p>。
+         const context=proseSoFar.trim().slice(-22);
+         longNotes.push({element:item.element,context});
        }else{
          p.appendChild(item.element);
        }
      }
      if(p.textContent.trim())frag.appendChild(p);
+     for(const note of longNotes){
+       if(note.context){
+         note.element.insertBefore(
+           el("div","jin-comment-context","对应原文：……"+note.context),
+           note.element.firstChild
+         );
+       }
+       frag.appendChild(note.element);
+     }
    }
    if(!frag.childNodes.length)throw new Error("正文内容为空");
    target.replaceChildren(frag);
-   $("source-status").textContent=chapter.label+" · 金圣叹批语 "+noteCount+" 条";
+   $("source-status").textContent=chapter.label+" · 金圣叹批语 "+count+" 条";
    $("source-link").href=data.source||link;
  }
  async function load(){
