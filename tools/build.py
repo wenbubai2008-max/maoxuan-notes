@@ -202,15 +202,17 @@ def home_page(arts):
 def shelf_page():
     books = json.load(open(C('books.json'), encoding='utf-8'))
     cards = ''.join(
-        f'<a class="bookcard" href="{b["href"]}"><div class="spine"><span>{esc(b["title"])}</span></div>'
-        f'<div class="info"><h2>{esc(b["title"])}</h2><p class="by">{esc(b["author"])} · {esc(b["edition"])} · {esc(b["years"])}</p>'
-        f'<p>{esc(b["desc"])}</p><p class="st">{esc(b["status"])}</p><span class="go">进入这本书 →</span></div></a>'
+        f'<a class="bookshelf-entry" href="{esc(b["href"])}" aria-label="阅读{esc(b["title"])}">'
+        f'<h2>{esc(b["title"])}</h2>'
+        f'<p class="bookshelf-edition">第一至五卷</p>'
+        f'<div class="bookshelf-cover" aria-hidden="true"><span>{esc(b["title"])}</span></div>'
+        f'<span class="bookshelf-open">进入阅读 <span aria-hidden="true">→</span></span></a>'
         for b in books)
-    body = (f'<div class="shell wide"><main><div class="eyebrow">书架</div><h1>读书</h1>'
-            f'<p class="lede">一本一本地读，读完把背景、推理和自己的判断记下来。</p>'
-            f'<div class="shelf">{cards}</div>'
-            f'<p class="note-s">共 {len(books)} 本。</p></main></div>\n')
-    return head('读书', '') + topbar('', 'shelf') + body + foot('', shelf=True)
+    body = (f'<main class="bookshelf-home">'
+            f'<h1 class="bookshelf-heading">书架</h1>'
+            f'<div class="bookshelf-grid">{cards}</div>'
+            f'</main>\n')
+    return head('书架 · 读书', '') + body + '</body>\n</html>\n'
 
 def method_page(arts):
     root = ''
