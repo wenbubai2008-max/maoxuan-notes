@@ -1,0 +1,70 @@
+name: 2027年1月1日公开原文
+
+# 北京时间 2027-01-01 00:05（UTC 2026-12-31 16:05）自动运行；也可以在 Actions 页面手动运行。
+# 需要先在仓库 Settings → Secrets and variables → Actions 里添加名为 MAOXUAN_PASSWORD 的密钥（值为原文密码）。
+on:
+  schedule:
+    - cron: '5 16 31 12 *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '提前运行（忽略日期检查）'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  unlock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查日期和状态
+        id: check
+        run: |
+          today=$(TZ=Asia/Shanghai date +%Y%m%d)
+          if [ "$today" -lt 20270101 ] && [ "${{ inputs.force }}" != "true" ]; then
+            echo "北京时间 $today，还没到 2027-01-01，不执行。"; echo "go=no" >> $GITHUB_OUTPUT; exit 0
+          fi
+          if ! grep -qi staticrypt text/001.html; then
+            echo "原文已经是公开状态，不需要再处理。"; echo "go=no" >> $GITHUB_OUTPUT; exit 0
+          fi
+          echo "go=yes" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.go == 'yes'
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.go == 'yes'
+        with:
+          python-version: '3.12'
+
+      - name: 解密原文页面
+        if: steps.check.outputs.go == 'yes'
+        env:
+          MAOXUAN_PASSWORD: ${{ secrets.MAOXUAN_PASSWORD }}
+        run: |
+          if [ -z "$MAOXUAN_PASSWORD" ]; then
+            echo "::error::没有找到密钥 MAOXUAN_PASSWORD，请在仓库设置里添加。"; exit 1
+          fi
+          npx --yes staticrypt@3.5.4 text/[0-9]*.html --decrypt -d build/decrypted --password "$MAOXUAN_PASSWORD" --config .staticrypt.json
+          cp build/decrypted/*.html text/
+          grep -qi staticrypt text/001.html && { echo "::error::解密失败，请检查密钥是否正确"; exit 1; } || true
+          python3 tools/build.py
+
+      - name: 提交并发布
+        if: steps.check.outputs.go == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add text index.html method.html v1
+          git commit -m "2027年1月1日：原文公开，去掉密码" || exit 0
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true

@@ -6,8 +6,6 @@
 
 ```
 index.html            首页（由 build.py 生成）
-compare.html          原文对照阅读（第一卷原文在线；也可选本地 PDF）
-originals/v1/NN.html  第一卷各篇原文文字稿（由1967年PDF提取）
 method.html           总论：思维方法（生成）
 v1/NN.html            第一卷各篇（生成）
 assets/site.css/.js   共享样式和脚本
@@ -36,10 +34,18 @@ tools/split_corpus.py 把本地 PDF 切成单篇 JSON
 
 ## 原文
 
-公开站点已提供 `compare.html`：第一卷17篇的1967年版文字原文已发布在 `originals/v1/`，可直接左原文右注解阅读；如需核对扫描影印版，可选择本地 PDF，文件仍只在浏览器本地加载。1977年第五卷目前仍须选择本地 PDF 阅读，逐篇分析尚待制作。
+- `text/NNN.html`：五卷原文，每篇一页，**已加密**。2026 年 12 月 31 日前打开时需要输入密码。
+- `text/index.html`：原文目录（公开，只有标题）。
+- `content/text_index.json`：原文篇目清单，`build.py` 用它生成目录和注解页上的“阅读原文”链接。
+- 加密用的是 [StaticCrypt](https://github.com/robinmoisson/staticrypt)，盐值在 `.staticrypt.json`。仓库里只有加密后的文件，明文和 PDF 都不进仓库。
 
-原文 PDF 放在 `source/`，切分结果在 `build/`，都不进仓库。第一卷原文文字已由上传的1967年一卷本提取并发布，存在自动提取误差；引用前应核对PDF扫描页。
+**2027 年 1 月 1 日自动公开**：工作流 `.github/workflows/unlock-text.yml` 会在北京时间 2027-01-01 00:05 自动解密全部原文页面并提交。前提是在仓库 Settings → Secrets and variables → Actions 里添加了名为 `MAOXUAN_PASSWORD` 的密钥。
+
+重新生成原文页面（需要本地有 PDF）：
 
 ```bash
-python3 tools/split_corpus.py --vol14 source/一卷本.pdf --vol5 source/第五卷.pdf --out build/corpus.json
+python3 tools/build_text.py --vol14 source/一卷本.pdf --vol5 source/第五卷.pdf --out build/text.json
+python3 tools/make_text_site.py
+MAOXUAN_PASSWORD=密码 bash tools/encrypt_text.sh
+python3 tools/build.py
 ```
