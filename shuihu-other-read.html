@@ -30,6 +30,7 @@
 </nav>
 <p class="jin-credit">底本取自维基文库百回／百二十回版本，转换为简体后按版本存放。本站读注为独立分析，并非李卓吾、容与堂或袁无涯逐句原批。查看<a id="source-link" href="#" target="_blank" rel="noopener noreferrer">本回来源</a>可核对原文。</p>
 </main>
+<script src="assets/shuihu-text-clean.js?v=1"></script>
 <script src="assets/shuihu-more-data.js"></script>
 <script>
 (function(){
@@ -79,7 +80,7 @@
      if(!byIndex.has(idx))byIndex.set(idx,[]);
      byIndex.get(idx).push({text:entry.text,kind:entry.kind||"原批",source:true});
    }
-   const cleanParagraphs=data.paragraphs.filter(p=>typeof p==="string"&&p.trim());
+   const cleanParagraphs=(window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs).filter(p=>typeof p==="string"&&p.trim());
    for(let i=0;i<cleanParagraphs.length;i++){
      const raw=cleanParagraphs[i];
      const p=node("p","jin-text",raw);frag.appendChild(p);
