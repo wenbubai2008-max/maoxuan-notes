@@ -18,9 +18,7 @@
  <div><span class="jin-label">金圣叹评点本</span><h1>水浒传</h1><p>楔子及七十回 · 简体原文与随文金批</p><a class="jin-intro-link" href="shuihu-read.html?chapter=0">开始阅读 →</a></div>
 </section>
 <h2 id="chapters" class="jin-toc-title">目录</h2>
-<div class="jin-toc-tools"><input id="chapter-search" class="jin-search" type="search" placeholder="搜索回目，如 林冲、武松" aria-label="搜索回目"></div>
 <ol id="chapter-list" class="jin-toc" aria-label="楔子及七十回目录"></ol>
-<p id="chapter-empty" class="jin-endnote" hidden>没有找到对应的回目。</p>
 <p class="jin-endnote">底本：金圣叹评七十回本。原文转为简体，金圣叹评语以赭金色直接嵌入，二者明确区分。</p>
 </main>
 <script src="assets/shuihu-data.js"></script>
@@ -29,13 +27,9 @@
  "use strict";
  const entries=window.SHUIHU_CHAPTERS||[];
  const list=document.getElementById("chapter-list");
- const q=document.getElementById("chapter-search");
- const empty=document.getElementById("chapter-empty");
  function draw(){
-   const word=q.value.trim().toLowerCase();
-   const matches=entries.filter(c=>(c.label+" "+c.title).toLowerCase().includes(word));
    const frag=document.createDocumentFragment();
-   matches.forEach(c=>{
+   entries.forEach(c=>{
      const li=document.createElement("li");
      const a=document.createElement("a");
      a.href="shuihu-read.html?chapter="+c.number;
@@ -43,9 +37,9 @@
      const title=document.createElement("span");title.className="jin-chapter-name";title.textContent=c.title;
      a.append(no,title);li.appendChild(a);frag.appendChild(li);
    });
-   list.replaceChildren(frag);empty.hidden=matches.length>0;
+   list.replaceChildren(frag);
  }
- q.addEventListener("input",draw);draw();
+ draw();
 })();
 </script>
 </body></html>
