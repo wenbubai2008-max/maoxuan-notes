@@ -37,6 +37,28 @@ jobs:
           fi
           echo "go=yes" >> $GITHUB_OUTPUT
 
+      - name: 验证密钥能否解开原文（不改动任何文件）
+        env:
+          MAOXUAN_PASSWORD: ${{ secrets.MAOXUAN_PASSWORD }}
+        run: |
+          [ -z "$MAOXUAN_PASSWORD" ] && { echo "::warning::密钥未设置"; exit 0; }
+          grep -q '"ct"' text/para/v1-01.json || { echo "原文已公开，跳过验证"; exit 0; }
+          pip install --quiet cryptography
+          python3 - <<'PY'
+          import base64, json, os
+          from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+          from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+          from cryptography.hazmat.primitives import hashes
+          rec = json.load(open('text/para/v1-01.json'))
+          key = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=bytes.fromhex(rec['salt']), iterations=rec['iter']).derive(os.environ['MAOXUAN_PASSWORD'].encode())
+          try:
+              AESGCM(key).decrypt(base64.b64decode(rec['iv']), base64.b64decode(rec['ct']), None)
+              print('密钥验证：正确，可以解开原文')
+          except Exception:
+              print('::error::密钥验证：不正确，解不开原文，请检查密钥的值')
+              raise SystemExit(1)
+          PY
+
       - uses: actions/setup-node@v4
         if: steps.check.outputs.go == 'yes'
         with:
