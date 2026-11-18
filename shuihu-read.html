@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/shuihu-jin.css?v=2">
+<link rel="stylesheet" href="assets/shuihu-jin.css?v=3">
 </head>
 <body>
 <header class="jin-bar"><div class="jin-bar-inner">
@@ -72,46 +72,47 @@
  function render(data){
    if(!Array.isArray(data.paragraphs)||!data.paragraphs.length)throw new Error("原文数据为空");
    const notes=Array.isArray(data.jin_notes)?data.jin_notes:[];
-   const lookup=new Map(notes.map((note,i)=>[Number(note.id===undefined?i:note.id),note]));
+   const notesById=new Map(notes.map((note,i)=>[Number(note.id===undefined?i:note.id),note]));
    const paragraphs=window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs;
    const target=$("chapter-content"),frag=document.createDocumentFragment();
    let noteCount=0;
+   function noteElement(note){
+     noteCount++;
+     const kind=String(note.kind||"金批");
+     const content=String(note.text||"").trim();
+     const isBlock=kind==="总批"||kind==="眉批"||content.length>82||content.includes("\n");
+     if(isBlock){
+       const box=el("aside","jin-comment-block");
+       const heading=el("strong","jin-kind","【"+(kind==="金批"?"金批":kind)+"】");
+       box.append(heading,document.createTextNode(content));
+       return {element:box,block:true};
+     }
+     const inline=el("span","jin-comment-inline",content);
+     inline.setAttribute("aria-label","金圣叹"+kind+"："+content);
+     return {element:inline,block:false};
+   }
    for(const raw of paragraphs){
      if(typeof raw!=="string"||!raw.trim())continue;
-     const matches=[...raw.matchAll(/⟦J(\d+)⟧/g)];
-     const prose=raw.replace(/⟦J\d+⟧/g,"").trim();
-     if(prose)frag.appendChild(el("p","jin-text",prose));
-     const items=[];
-     for(const match of matches){
-       const note=lookup.get(Number(match[1]));
-       if(!note||!String(note.text||"").trim())continue;
-       const before=raw.slice(0,match.index).replace(/⟦J\d+⟧/g,"").replace(/\s+/g," ").trim();
-       const excerpt=before.length>=7?before.slice(-22):"";
-       items.push({kind:String(note.kind||"夹批"),text:String(note.text).trim(),excerpt});
-     }
-     if(!items.length)continue;
-     noteCount+=items.length;
-     const group=el("section","jin-comment-stack");
-     const header=el("div","jin-comment-stack-heading","金圣叹评");
-     const tally=el("span","jin-comment-count",items.length+" 则");
-     header.appendChild(tally);group.appendChild(header);
-     const list=el("div","jin-comment-list");
-     items.forEach((item,i)=>{
-       const piece=el("div","jin-comment-item");
-       if(item.excerpt){
-         const quote=el("span","jin-comment-context","对应原文：……"+item.excerpt);
-         piece.appendChild(quote);
+     let p=el("p","jin-text");
+     const parts=raw.split(/(⟦J\d+⟧)/g);
+     for(const part of parts){
+       const marker=part.match(/^⟦J(\d+)⟧$/);
+       if(!marker){if(part)p.appendChild(document.createTextNode(part));continue}
+       const note=notesById.get(Number(marker[1]));
+       if(!note){p.appendChild(document.createTextNode(part));continue}
+       const item=noteElement(note);
+       if(item.block){
+         if(p.textContent.trim()){frag.appendChild(p);p=el("p","jin-text")}
+         frag.appendChild(item.element);
+       }else{
+         p.appendChild(item.element);
        }
-       const body=el("div","jin-comment-body");
-       body.appendChild(el("span","jin-comment-type",item.kind));
-       body.appendChild(document.createTextNode(item.text));
-       piece.appendChild(body);list.appendChild(piece);
-     });
-     group.appendChild(list);frag.appendChild(group);
+     }
+     if(p.textContent.trim())frag.appendChild(p);
    }
    if(!frag.childNodes.length)throw new Error("正文内容为空");
    target.replaceChildren(frag);
-   $("source-status").textContent=chapter.label+" · 金圣叹评语 "+noteCount+" 则";
+   $("source-status").textContent=chapter.label+" · 金圣叹批语 "+noteCount+" 条";
    $("source-link").href=data.source||link;
  }
  async function load(){
