@@ -163,7 +163,8 @@
     var r = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTES + '?ref=main&t=' + Date.now(),
       {headers:{'Authorization':'Bearer ' + token(), 'Accept':'application/vnd.github+json'}, cache:'no-store'});
     if(r.status === 404) return {sha:null, rec:null};
-    if(!r.ok) throw new Error('get ' + r.status);
+    if(r.status === 401 || r.status === 403) throw new Error('TOKEN');
+    if(!r.ok) throw new Error('读取失败（HTTP ' + r.status + '）');
     var j = await r.json();
     return {sha:j.sha, rec:JSON.parse(b64utf8(j.content))};
   }
@@ -187,8 +188,9 @@
     var st = li.querySelector('.st');
     var saved = notes.sections[li._i];
     var msg = {'saving':'正在保存到 GitHub…','dirty':'有改动，尚未保存','error':'保存失败：' + (extra||''),'':''}[state] || '';
+    if(state === 'error' && extra === 'TOKEN') msg = '保存失败：令牌无效或已过期（重新生成过令牌的话，需要换成新的）';
     if(!msg) msg = saved ? '已保存 · ' + fmt(saved.updated) : '还没有笔记';
-    if(!token() && state !== 'saving') msg += ' · <a href="#" data-open-token>设置 GitHub 令牌后才能保存</a>';
+    if(state !== 'saving') msg += ' · <a href="#" data-open-token>' + (token() ? '更换令牌' : '设置 GitHub 令牌后才能保存') + '</a>';
     st.innerHTML = msg;
     st.querySelectorAll('[data-open-token]').forEach(function(a){ a.addEventListener('click', function(e){ e.preventDefault(); openTokenDialog(); }); });
   }
@@ -208,7 +210,8 @@
         var r = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTES,
           {method:'PUT', headers:{'Authorization':'Bearer ' + token(), 'Accept':'application/vnd.github+json'}, body:JSON.stringify(body)});
         if(r.status === 409 || r.status === 422){ continue; }
-        if(!r.ok){ var t = r.status === 401 || r.status === 403 ? '令牌无效或权限不够' : ('HTTP ' + r.status); throw new Error(t); }
+        if(r.status === 401 || r.status === 403) throw new Error('TOKEN');
+        if(!r.ok) throw new Error('HTTP ' + r.status);
         notes = cur; ls(draftKey(i), null); setStatus(li, '');
         return;
       }catch(e){ setStatus(li, 'error', e.message); return; }
