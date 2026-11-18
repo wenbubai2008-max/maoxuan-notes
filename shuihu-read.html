@@ -78,14 +78,14 @@
    let noteCount=0;
    for(const raw of paragraphs){
      if(typeof raw!=="string"||!raw.trim())continue;
-     const matches=[...raw.matchAll(/⟦J(\\d+)⟧/g)];
-     const prose=raw.replace(/⟦J\\d+⟧/g,"").trim();
+     const matches=[...raw.matchAll(/⟦J(\d+)⟧/g)];
+     const prose=raw.replace(/⟦J\d+⟧/g,"").trim();
      if(prose)frag.appendChild(el("p","jin-text",prose));
      const items=[];
      for(const match of matches){
        const note=lookup.get(Number(match[1]));
        if(!note||!String(note.text||"").trim())continue;
-       const before=raw.slice(0,match.index).replace(/⟦J\\d+⟧/g,"").replace(/\\s+/g," ").trim();
+       const before=raw.slice(0,match.index).replace(/⟦J\d+⟧/g,"").replace(/\s+/g," ").trim();
        const excerpt=before.length>=7?before.slice(-22):"";
        items.push({kind:String(note.kind||"夹批"),text:String(note.text).trim(),excerpt});
      }
