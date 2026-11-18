@@ -1,11 +1,12 @@
-# 毛选读注
+# 读书 · 毛泽东选集
 
 《毛泽东选集》五卷逐篇注解与深读。网站：https://wenbubai2008-max.github.io/maoxuan-notes/
 
 ## 结构
 
 ```
-index.html            首页（由 build.py 生成）
+index.html            书架首页（生成，书目见 content/books.json）
+maoxuan.html          《毛泽东选集》本书首页（生成）
 method.html           总论：思维方法（生成）
 v1/NN.html            第一卷各篇（生成）
 assets/site.css/.js   共享样式和脚本

@@ -27,7 +27,7 @@ def main():
         notes_html = f'<h2 class="vh">原书注释</h2><ol class="srcnotes">{notes}</ol>' if notes else ''
         prev_ = f'<a href="{i-1:03d}.html">← 上一篇</a>' if i > 1 else '<span></span>'
         next_ = f'<a href="{i+1:03d}.html">下一篇 →</a>' if i < len(data) else '<span></span>'
-        page = (B.head(f'{x["title"]} · 原文 · 毛选读注', root) + B.topbar(root, 'text') +
+        page = (B.head(f'{x["title"]} · 原文 · 毛选 · 读书', root) + B.topbar(root, 'text') +
                 f'<div class="shell wide"><main><div class="eyebrow">原文 · {"第五卷" if x["vol"]=="5" else "一至四卷"}</div>'
                 f'<h1>{B.esc(x["title"])}</h1><p class="date">（{B.esc(x["date"])}）</p>{back}{head}'
                 f'<article class="srctext">{paras}</article>{notes_html}'

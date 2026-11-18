@@ -59,16 +59,19 @@ def head(title, root):
             f'<link rel="stylesheet" href="{root}assets/site.css?v={asset_ver()}">\n</head>\n<body>\n')
 
 def topbar(root, current):
-    items = [('home', '首页', f'{root}index.html'), ('v1', '第一卷', f'{root}v1/01.html'),
+    if current == 'shelf':
+        return (f'<header class="topbar"><a class="brand" href="{root}index.html">读书'
+                f'<small>读过的书，和读书时想清楚的事</small></a></header>\n')
+    items = [('home', '本书首页', f'{root}maoxuan.html'), ('v1', '第一卷', f'{root}v1/01.html'),
              ('method', '总论：思维方法', f'{root}method.html'), ('text', '原文', f'{root}text/index.html')]
     links = ''.join(
         f'<a href="{u}"{" aria-current=\"page\"" if k == current else ""}>{t}</a>' for k, t, u in items)
-    return (f'<header class="topbar"><a class="brand" href="{root}index.html">毛选读注'
-            f'<small>《毛泽东选集》逐篇注解</small></a>'
-            f'<nav class="sitenav" aria-label="网站栏目">{links}</nav></header>\n')
+    return (f'<header class="topbar"><a class="brand" href="{root}index.html">读书</a>'
+            f'<span class="crumb">›</span><a class="book" href="{root}maoxuan.html">毛泽东选集</a>'
+            f'<nav class="sitenav" aria-label="本书栏目">{links}</nav></header>\n')
 
-def foot(root):
-    return (f'<footer class="sitefoot"><p>注解与分析由 Claude 撰写，供个人学习参考。原文由人民出版社 1967 年版提取，个别分段或文字可能有误，引用前请核对原书。</p></footer>\n'
+def foot(root, shelf=False):
+    return (f'<footer class="sitefoot"><p>{"读书笔记由 Claude 协助撰写，供个人学习参考。" if shelf else "注解与分析由 Claude 撰写，供个人学习参考。原文由人民出版社 1967 年版提取，个别分段或文字可能有误，引用前请核对原书。"}</p></footer>\n'
             f'<script src="{root}assets/site.js?v={asset_ver()}"></script>\n</body>\n</html>\n')
 
 def toc(arts, root, cur_no):
@@ -158,7 +161,7 @@ def article_page(a, arts):
         prev_next.append('<span></span>')
     if idx + 1 < len(arts):
         n = arts[idx + 1]; prev_next.append(f'<a href="{n["no"]:02d}.html">{esc(n["title"])} →</a>')
-    page = (head(f'{a["title"]} · 毛选读注', root) + topbar(root, 'v1') + '<div class="shell">' + toc(arts, root, a['no']) +
+    page = (head(f'{a["title"]} · 毛选 · 读书', root) + topbar(root, 'v1') + '<div class="shell">' + toc(arts, root, a['no']) +
             (f'<main data-para="{root}text/para/v1-{a["no"]:02d}.json">' if os.path.exists(os.path.join(ROOT, 'text', 'para', f'v1-{a["no"]:02d}.json')) else '<main>') +
             f'<div class="eyebrow">第一卷 · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
             f'<h1>{esc(a["title"])}</h1><p class="date">（{esc(a["date"])}）</p>'
@@ -180,7 +183,7 @@ def home_page(arts):
         f'<li><a href="v1/{a["no"]:02d}.html"><span class="n">{a["no"]}</span><span class="t">{esc(a["title"])}'
         f'<span class="d">{esc(a["date"])}</span></span><span class="g">{esc(a["gist"])}</span></a></li>' for a in arts)
     body = f'''<div class="shell wide"><main>
-<div class="eyebrow">毛选读注</div>
+<div class="eyebrow"><a href="index.html">书架</a> › 毛泽东选集</div>
 <h1>《毛泽东选集》逐篇注解与深读</h1>
 <p class="lede">每篇文章做三件事：讲清楚写作背景和名词，把文章的推理过程拆开，再看它的方法今天还能怎么用、局限在哪里。观点会过时，思考的方法可以带走。</p>
 <div class="cards">
@@ -192,9 +195,22 @@ def home_page(arts):
 <h2 class="vh">第二至五卷 <small>待做</small></h2>
 <p class="note-s">第一卷完成后继续。</p>
 </main></div>
-<script>if(location.hash==='#method'){{location.replace('method.html');}}</script>
+
 '''
-    return head('毛选读注', root) + topbar(root, 'home') + body + foot(root)
+    return head('毛泽东选集 · 读书', root) + topbar(root, 'home') + body + foot(root)
+
+def shelf_page():
+    books = json.load(open(C('books.json'), encoding='utf-8'))
+    cards = ''.join(
+        f'<a class="bookcard" href="{b["href"]}"><div class="spine"><span>{esc(b["title"])}</span></div>'
+        f'<div class="info"><h2>{esc(b["title"])}</h2><p class="by">{esc(b["author"])} · {esc(b["edition"])} · {esc(b["years"])}</p>'
+        f'<p>{esc(b["desc"])}</p><p class="st">{esc(b["status"])}</p><span class="go">进入这本书 →</span></div></a>'
+        for b in books)
+    body = (f'<div class="shell wide"><main><div class="eyebrow">书架</div><h1>读书</h1>'
+            f'<p class="lede">一本一本地读，读完把背景、推理和自己的判断记下来。</p>'
+            f'<div class="shelf">{cards}</div>'
+            f'<p class="note-s">共 {len(books)} 本。</p></main></div>\n')
+    return head('读书', '') + topbar('', 'shelf') + body + foot('', shelf=True)
 
 def method_page(arts):
     root = ''
@@ -204,7 +220,7 @@ def method_page(arts):
         no = int(m.group(1)); a = next(x for x in arts if x['no'] == no)
         return f'<a href="v1/{no:02d}.html">《{esc(a["title"])}》</a>'
     body = re.sub(r'\[\[v1-(\d\d)\]\]', link, body)
-    return head('总论：思维方法 · 毛选读注', root) + topbar(root, 'method') + f'<div class="shell wide"><main class="long">{body}</main></div>\n' + foot(root)
+    return head('总论：思维方法 · 毛选 · 读书', root) + topbar(root, 'method') + f'<div class="shell wide"><main class="long">{body}</main></div>\n' + foot(root)
 
 def text_index_page():
     root = '../'
@@ -223,7 +239,7 @@ def text_index_page():
                         f'<span class="d">{esc(t["date"])}</span></span><span class="g">约 {t["chars"]//100/10:.1f} 千字</span></a>{tag}</li>')
         body.append('</ol>')
     body.append('</main></div>')
-    return head('原文 · 毛选读注', root) + topbar(root, 'text') + ''.join(body) + foot(root)
+    return head('原文 · 毛选 · 读书', root) + topbar(root, 'text') + ''.join(body) + foot(root)
 
 def main():
     arts = load_articles()
@@ -234,9 +250,10 @@ def main():
     os.makedirs(os.path.join(ROOT, 'v1'), exist_ok=True)
     for a in arts:
         open(os.path.join(ROOT, 'v1', f'{a["no"]:02d}.html'), 'w', encoding='utf-8').write(article_page(a, arts))
-    open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8').write(home_page(arts))
+    open(os.path.join(ROOT, 'maoxuan.html'), 'w', encoding='utf-8').write(home_page(arts))
+    open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8').write(shelf_page())
     open(os.path.join(ROOT, 'method.html'), 'w', encoding='utf-8').write(method_page(arts))
-    print(f'生成 {len(arts)} 篇 + 首页 + 总论')
+    print(f'生成 {len(arts)} 篇 + 书架 + 本书首页 + 总论')
 
 if __name__ == '__main__':
     main()
