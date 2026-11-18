@@ -5,11 +5,15 @@
 ## 结构
 
 ```
-index.html            书架首页（生成，书目见 content/books.json）
+index.html            书架首页（四本书，书目见 content/books.json）
 maoxuan.html          《毛泽东选集》本书首页（生成）
 shuihu.html           《水浒传》金圣叹七十回本目录
 shuihu-read.html      《水浒传》简体原文与直接显示的金圣叹原批
 assets/shuihu-jin.css 金圣叹版本专用样式
+assets/shuihu-more.css 容与堂本与百二十回本专用样式
+shuihu-100.html       容与堂百回本目录
+shuihu-120.html       百二十回本目录
+shuihu-other-read.html 两本新版本的独立正文阅读器
 assets/shuihu-data.js 七十回目录和来源地址
 assets/shuihu-commentary.js 原多版本研究存档（当前金圣叹阅读页不加载）
 method.html           总论：思维方法（生成）
@@ -65,3 +69,12 @@ python3 tools/build.py
 - 原文同步工具 `tools/fetch_shuihu.py`，离线旧格式修复 `tools/normalize_shuihu_cached.py`，工作流 `.github/workflows/shuihu-text.yml`。
 - 如需容与堂百回本和袁无涯百二十回本，未来分别作为独立书籍建立，不能把不同底本的评语贴进金圣叹本中。
 - 原文为公开文本经自动简繁转换而来，仍可能存在错字或断句偏差；正式引用应对照原本。
+
+## 水浒传另外两个独立版本（2026-11-18）
+
+- `shuihu-100.html`：容与堂百回本书籍首页、100回独立目录。简体正文存放在 `shuihu/100/text/001.json` 至 `100.json`。
+- `shuihu-120.html`：百二十回本（袁无涯刊本系统）书籍首页、120回独立目录，另含田虎、王庆故事。简体正文存放在 `shuihu/120/text/001.json` 至 `120.json`。
+- `shuihu-other-read.html?edition=100&chapter=N` 与 `?edition=120&chapter=N` 采用同一阅读引擎但严格按版读取独立目录和正文，字形经 OpenCC 转简体。
+- `assets/shuihu-more-data.js`：各版来源说明及已撰写并明确署名为**本站读注**的少量随文点评；只按与相关正文匹配的关键词插入。不将金圣叹的批语复制给其他版本，也不伪称这些本站点评是李卓吾原批。
+- `tools/fetch_shuihu_more.py`：从维基文库相应版本提取独立原文，`.github/workflows/shuihu-more.yml` 在 GitHub Actions 中执行，先提交起始几回，再逐步补齐余回；实际缓存量以各版本 `status.json` 为准。
+- 两本明代评点本的完整历史眉批、夹批和总评并未保留在当前维基文库正文转录里，因此尚未上线为原批。若未来取得可核查的原批影印资料，应另行校勘、注明回页后才能插入。
