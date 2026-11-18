@@ -172,7 +172,24 @@
    if(topic.theme){const x=document.createElement("p");x.textContent=topic.theme;box.appendChild(x)}
    if(topic.question){const x=document.createElement("p");x.className="sh-reader-question";x.textContent="思考："+topic.question;box.appendChild(x)}
  }
+ function normalizeAnnotations(doc){
+   if(!Array.isArray(doc.paragraphs)||!doc.paragraphs.length)return doc;
+   if(Array.isArray(doc.jin_notes) && doc.jin_notes.length>0)return doc;
+   const all=doc.paragraphs.join("\n\n");
+   if(!all.includes("〖")&&!all.includes("【"))return doc;
+   const notes=[];
+   const fixed=all.replace(/[〖【]([\s\S]*?)[〗】]/g,(match,contents)=>{
+     const id=notes.length;
+     const classified=contents.match(/^\s*(总批|夹批|眉批|金批)\s*[:：]\s*([\s\S]*)$/);
+     notes.push({id,kind:classified?classified[1]:"金批",text:classified?classified[2].trim():contents.trim()});
+     return "⟦J"+id+"⟧";
+   });
+   doc.paragraphs=fixed.split("\n\n").map(s=>s.trim()).filter(Boolean);
+   doc.jin_notes=notes;
+   return doc;
+ }
  function render(doc){
+   doc=normalizeAnnotations(doc);
    if(!Array.isArray(doc.paragraphs)||!doc.paragraphs.length)throw Error("原文数据为空");
    const paragraphs=doc.paragraphs;
    const originalNotes=Array.isArray(doc.jin_notes)?doc.jin_notes:[];
@@ -209,7 +226,7 @@
    ps.forEach(p=>{
      let content=(p.textContent||"").trim();
      if(!content||content.length<12)return;
-     content=content.replace(/〖([\s\S]*?)〗/g,(all,note)=>{
+     content=content.replace(/[〖【]([\s\S]*?)[〗】]/g,(all,note)=>{
        const i=jin_notes.length;
        const a=note.match(/^\s*(总批|夹批|眉批)[:：]([\s\S]*)$/);
        jin_notes.push({id:i,kind:a?a[1]:"夹批",text:a?a[2].trim():note.trim()});
