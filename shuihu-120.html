@@ -16,10 +16,8 @@
  <a class="jin-intro-link" href="shuihu-other-read.html?edition=120&chapter=1">从第一回开始 →</a></div>
 </section>
 <h2 id="chapters" class="jin-toc-title">目录</h2>
-<div class="jin-toc-tools"><input id="chapter-search" class="jin-search" type="search" placeholder="搜索章节或人物" aria-label="搜索本书回目"></div>
 <p class="sh-edition-count" id="index-status">第1至120回</p>
 <ol id="chapter-list" class="jin-toc" aria-label="全书120回目录"></ol>
-<p id="chapter-empty" class="jin-endnote" hidden>没有找到对应的回目。</p>
 <p class="jin-endnote">本书独立使用袁无涯系百二十回本的回目与原文，不混入金圣叹七十回本。本站读注另行注明；尚未核实的明代评语不冒充原批。</p>
 </main>
 <script src="assets/shuihu-more-data.js"></script>
@@ -28,15 +26,13 @@
  "use strict";
  const edition="120", base=window.SHUIHU_MORE?.[edition];
  const max=base?.max||120;
- const q=document.getElementById("chapter-search"),list=document.getElementById("chapter-list"),empty=document.getElementById("chapter-empty"),state=document.getElementById("index-status");
+ const list=document.getElementById("chapter-list"),state=document.getElementById("index-status");
  let names=new Map((base.chapters||[]).map(c=>[c.number,c.title]));
  function render(){
-   const filter=q.value.trim().toLowerCase();
    const frag=document.createDocumentFragment();let count=0;
    for(let n=1;n<=max;n++){
      const title=names.get(n)||"";
      const label="第"+n+"回";
-     if(!(label+" "+title).toLowerCase().includes(filter))continue;
      count++;
      const a=document.createElement("a");a.href="shuihu-other-read.html?edition="+edition+"&chapter="+n;
      const num=document.createElement("span");num.className="jin-num";num.textContent=label;
@@ -44,9 +40,9 @@
      a.append(num,name);
      const li=document.createElement("li");li.append(a);frag.appendChild(li);
    }
-   list.replaceChildren(frag);empty.hidden=count!==0;
+   list.replaceChildren(frag);
  }
- q.addEventListener("input",render);render();
+ render();
  fetch("shuihu/"+edition+"/status.json").then(r=>r.ok?r.json():null).then(progress=>{
    if(progress && Array.isArray(progress.available)){
      const current=progress.available.length;
