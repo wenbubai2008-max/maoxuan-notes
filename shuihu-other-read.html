@@ -5,7 +5,7 @@
 <title>水浒传 · 阅读</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/shuihu-more.css?v=2">
+<link rel="stylesheet" href="assets/shuihu-more.css?v=3">
 </head>
 <body class="sh-other">
 <header class="jin-bar"><div class="jin-bar-inner">
@@ -66,6 +66,31 @@
  $("font-up").addEventListener("click",()=>{font=Math.min(24,font+1);fontSet()});
  fontSet();
  function node(type,cls,content){const el=document.createElement(type);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el}
+
+ // 统一百回本、百二十回本的诗词与骈文排版。
+ // 来源文本有「换行 + 多个全角空格」作为每行缩进；
+ // 不可把这些空格交给 pre-wrap，否则只有首行靠左、后续行大幅右移。
+ function isVerseParagraph(raw){
+   const lines=String(raw).replace(/\r\n?/g,"\n").split("\n").filter(x=>x.trim());
+   if(lines.length<2)return false;
+   const indented=lines.slice(1).filter(line=>/^[ \t\u3000]{2,}\S/.test(line)).length;
+   return indented>=1 && (indented>=Math.ceil((lines.length-1)/2) || lines.length<=3);
+ }
+ function appendReadingParagraph(frag,raw){
+   const text=String(raw).replace(/\r\n?/g,"\n");
+   if(!isVerseParagraph(text)){
+     // 意外硬换行只归并在普通正文；原有中文标点不动。
+     frag.appendChild(node("p","jin-text",text.replace(/[ \t\u3000]*\n[ \t\u3000]*/g,"")));
+     return;
+   }
+   const verse=node("div","sh-verse");
+   // 每行以同一基线左对齐，整个诗词段落在阅读宽度中居中。
+   text.split("\n").map(line=>line.trim()).filter(Boolean).forEach(line=>{
+     verse.appendChild(node("span","sh-verse-line",line));
+   });
+   frag.appendChild(verse);
+ }
+
  function render(data,fromLive=false){
    if(!Array.isArray(data.paragraphs)||!data.paragraphs.length)throw new Error("本回正文未载入");
    const target=$("reading-content"),frag=document.createDocumentFragment();
@@ -108,7 +133,7 @@
        frag.appendChild(oldComment(raw,"容与堂底本附评 · 原署名归属待考"));
        continue;
      }
-     frag.appendChild(node("p","jin-text",raw));
+     appendReadingParagraph(frag,raw);
      for(const note of byIndex.get(i)||[]){
        frag.appendChild(oldComment(note.text,note.name+" · 经核实的原批"));
      }
