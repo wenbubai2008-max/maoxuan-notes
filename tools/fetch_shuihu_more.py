@@ -118,7 +118,9 @@ def extract_chapter(session, edition, n, title):
             paragraphs.append(clean)
     paragraphs = trim_paragraphs(paragraphs)
     chars = sum(len(p) for p in paragraphs)
-    if chars < 1500 or len(paragraphs) < 5:
+    # Some Wikisource chapters use a few unusually long paragraphs. Check the
+    # full text length before rejecting them solely for paragraph count.
+    if chars < 1500 or (len(paragraphs) < 3 and chars < 9000):
         raise RuntimeError(f"Incomplete chapter: {n}, {chars} characters and {len(paragraphs)} paragraphs")
     # No historical 批语 are extracted unless actually marked and attribution verified.
     return {
