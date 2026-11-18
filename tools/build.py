@@ -62,7 +62,7 @@ def topbar(root, current):
             f'<nav class="sitenav" aria-label="网站栏目">{links}</nav></header>\n')
 
 def foot(root):
-    return (f'<footer class="sitefoot"><p>注解与分析由 Claude 撰写，供个人学习参考。正文计划于 2027 年 1 月 1 日后导入。</p></footer>\n'
+    return (f'<footer class="sitefoot"><p>注解与分析由 Claude 撰写，供个人学习参考。原文由人民出版社 1967 年版提取，个别分段或文字可能有误，引用前请核对原书。</p></footer>\n'
             f'<script src="{root}assets/site.js"></script>\n</body>\n</html>\n')
 
 def toc(arts, root, cur_no):
@@ -90,8 +90,9 @@ def wrap_terms(text, notes, start):
             out = out.replace(k, f'<button class="term" data-note="n{num}">{k}<sup>{num}</sup></button>', 1)
     return out
 
-def render_sections(a):
+def render_sections(a, root='../'):
     parts, num = [], 1
+    link = text_link_for(a['no'], root)
     for si, s in enumerate(a['sections'], 1):
         notes = s.get('notes', [])
         summ = wrap_terms(s['sum'], notes, num)
@@ -101,9 +102,12 @@ def render_sections(a):
             lis.append(f'<li class="note" id="n{num + i}"><div class="head"><span class="num">{num + i}</span>'
                        f'<b>{esc(n["term"])}</b><span class="kind">{esc(n.get("kind", "注"))}</span></div>{esc(n["text"])}</li>')
         num += len(notes)
-        slot = s.get('slot', '原文 · 待导入')
+        if link:
+            slot_html = f'<a class="slot" href="{link}">阅读原文{"（需密码）" if text_locked() else ""} →</a>'
+        else:
+            slot_html = '<span class="slot">原文 · 暂未收入</span>'
         parts.append(f'<div class="sec"><div><h3><span class="sn">§{si}</span>{esc(s["h"])}</h3>'
-                     f'<span class="slot">{esc(slot)}</span>{q}<p class="summary">{summ}</p></div>'
+                     f'{slot_html}{q}<p class="summary">{summ}</p></div>'
                      f'<ol class="notes">{"".join(lis)}</ol></div>')
     return '\n'.join(parts), num - 1
 
