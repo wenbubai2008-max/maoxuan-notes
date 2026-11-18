@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="《水浒传》百回本、百二十回本独立简体原文与直接显示的读注。">
+<title>水浒传 · 阅读</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shuihu-more.css?v=1">
+</head>
+<body class="sh-other">
+<header class="jin-bar"><div class="jin-bar-inner">
+<a class="jin-back" id="back-link" href="shuihu-100.html">← 返回目录</a>
+<span class="jin-toplink" id="edition-label">水浒传</span>
+</div></header>
+<main class="jin-read-wrap">
+<header class="jin-read-heading">
+<small id="chapter-label">第1回</small>
+<h1 id="chapter-title">正在读取章节</h1>
+<p class="sh-reader-legend">黑色为原文，<strong>彩色为直接可见的本站读注</strong>。未核对的古人旧评不冒充原批。</p>
+</header>
+<div class="jin-controls">
+<span id="load-status" role="status">正在读取简体原文……</span>
+<div class="jin-ctrl-buttons"><button type="button" id="font-down">A−</button><button type="button" id="font-up">A＋</button></div>
+</div>
+<article class="jin-page jin-body" id="reading-content" aria-label="简体原文和本站读注" aria-busy="true">
+<p class="jin-text">正在载入……</p>
+</article>
+<nav class="jin-read-nav" aria-label="章节翻页">
+<a id="prev-chapter" href="#">← 上一回</a><a id="next-chapter" href="#">下一回 →</a>
+</nav>
+<p class="jin-credit">底本取自维基文库百回／百二十回版本，转换为简体后按版本存放。本站读注为独立分析，并非李卓吾、容与堂或袁无涯逐句原批。查看<a id="source-link" href="#" target="_blank" rel="noopener noreferrer">本回来源</a>可核对原文。</p>
+</main>
+<script src="assets/shuihu-more-data.js"></script>
+<script>
+(function(){
+ "use strict";
+ const $=id=>document.getElementById(id);
+ const args=new URLSearchParams(location.search);
+ const ed=args.get("edition")==="120"?"120":"100";
+ const conf=window.SHUIHU_MORE?.[ed];
+ if(!conf){$("reading-content").textContent="缺少本书版本信息。";return}
+ if(ed==="120")document.body.classList.add("sh-blue");
+ else document.body.classList.add("sh-green");
+ const max=conf.max;
+ let n=Number(args.get("chapter"));if(!Number.isInteger(n)||n<1||n>max)n=1;
+ const label="第"+n+"回";
+ const titleMap=new Map((conf.chapters||[]).map(c=>[c.number,c.title]));
+ $("back-link").href="shuihu-"+ed+".html#chapters";
+ $("edition-label").textContent=conf.label;
+ $("chapter-label").textContent=conf.label+" · "+label;
+ $("chapter-title").textContent=titleMap.get(n)||label;
+ document.title=label+" · "+conf.label+" · 水浒传";
+ $("prev-chapter").href=n>1?"shuihu-other-read.html?edition="+ed+"&chapter="+(n-1):"shuihu-"+ed+".html#chapters";
+ $("prev-chapter").textContent=n>1?"← 第"+(n-1)+"回":"← 返回目录";
+ $("next-chapter").href=n<max?"shuihu-other-read.html?edition="+ed+"&chapter="+(n+1):"shuihu-"+ed+".html#chapters";
+ $("next-chapter").textContent=n<max?"第"+(n+1)+"回 →":"返回目录 →";
+ const pageTitle="水滸傳_("+ed+"回本)/第"+String(n).padStart(3,"0")+"回";
+ const sourceURL="https://zh.wikisource.org/zh-hans/"+pageTitle.split("/").map(encodeURIComponent).join("/");
+ $("source-link").href=sourceURL;
+ let font=18;
+ try{let saved=Number(localStorage.getItem("sh-more-size"));if(saved>=15&&saved<=24)font=saved}catch(_){}
+ function fontSet(){document.documentElement.style.setProperty("--reading-size",font+"px");try{localStorage.setItem("sh-more-size",String(font))}catch(_){}}
+ $("font-down").addEventListener("click",()=>{font=Math.max(15,font-1);fontSet()});
+ $("font-up").addEventListener("click",()=>{font=Math.min(24,font+1);fontSet()});
+ fontSet();
+ function node(type,cls,content){const el=document.createElement(type);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el}
+ function render(data,fromLive=false){
+   if(!Array.isArray(data.paragraphs)||data.paragraphs.length===0)throw new Error("未获取完整的本回正文");
+   const target=$("reading-content"),frag=document.createDocumentFragment();
+   const claimedOld=Array.isArray(data.source_notes)?data.source_notes:[];
+   const notes=(conf.notes||{})[n]||[];
+   const seen=new Set();
+   const byIndex=new Map();
+   for(const entry of claimedOld){
+     // Only source-verified original commentary is allowed here, never inferred.
+     if(!entry.verified||typeof entry.text!=="string")continue;
+     const idx=Number(entry.paragraph_index);
+     if(!Number.isInteger(idx)||idx<0||idx>=data.paragraphs.length)continue;
+     if(!byIndex.has(idx))byIndex.set(idx,[]);
+     byIndex.get(idx).push({text:entry.text,kind:entry.kind||"原批",source:true});
+   }
+   const cleanParagraphs=data.paragraphs.filter(p=>typeof p==="string"&&p.trim());
+   for(let i=0;i<cleanParagraphs.length;i++){
+     const raw=cleanParagraphs[i];
+     const p=node("p","jin-text",raw);frag.appendChild(p);
+     // Add notes immediately after their relevant passage, always visible.
+     for(let j=0;j<notes.length;j++){
+       const nt=notes[j];
+       if(seen.has(j)||!nt.text)continue;
+       const anchor=String(nt.anchor||"");
+       const match=anchor&&raw.includes(anchor);
+       if(match || (i===Math.min(1,cleanParagraphs.length-1) && !anchor)){
+         const box=node("aside","sh-edition-note");
+         box.append(node("strong","","本站读注"),document.createTextNode(nt.text.replace(/^【本站读注】/,"")));
+         frag.appendChild(box);seen.add(j);
+       }
+     }
+     for(const item of byIndex.get(i)||[]){
+       const box=node("aside","sh-source-comment");
+       box.append(node("strong","",item.kind+" · 原批"),document.createTextNode(item.text));
+       frag.appendChild(box);
+     }
+   }
+   target.replaceChildren(frag);target.setAttribute("aria-busy","false");
+   $("load-status").textContent=fromLive?"维基文库实时读取 · 繁简字形请核对":label+" · 简体正文 "+(data.characters||"")+" 字";
+   if(data.source)$("source-link").href=data.source;
+ }
+ async function load(){
+   try{
+     const response=await fetch("shuihu/"+ed+"/text/"+String(n).padStart(3,"0")+".json");
+     if(!response.ok)throw new Error("暂无静态缓存");
+     const d=await response.json();
+     if(d.edition && String(d.edition)!==ed)throw new Error("文本版本不匹配");
+     render(d);return;
+   }catch(_){}
+   try{
+     $("load-status").textContent="正在读取本回备用原文……";
+     const params=new URLSearchParams({action:"parse",page:pageTitle,prop:"text",format:"json",formatversion:"2",origin:"*",uselang:"zh-hans",variant:"zh-hans"});
+     const r=await fetch("https://zh.wikisource.org/w/api.php?"+params.toString());
+     if(!r.ok)throw new Error("来源站点 HTTP "+r.status);
+     const d=await r.json();
+     if(d.error)throw new Error(d.error.info||"来源站点拒绝请求");
+     const html=d.parse&&d.parse.text;
+     if(typeof html!=="string")throw new Error("来源站点返回内容为空");
+     const doc=new DOMParser().parseFromString(html,"text/html");
+     const root=doc.querySelector(".mw-parser-output")||doc.body;
+     const paragraphs=[...root.querySelectorAll("p")].filter(p=>!p.closest("table, nav, footer, .noprint")).map(p=>(p.textContent||"").trim()).filter(p=>p.length>10);
+     if(paragraphs.join("").length<600)throw new Error("备用内容不完整");
+     render({paragraphs,source:sourceURL},true);
+   }catch(error){
+     $("reading-content").setAttribute("aria-busy","false");
+     const errorEl=node("div","sh-read-fallback");
+     errorEl.append(node("h2","","本回正文暂未载入"),node("p","","原文缓存尚在同步，备用源暂不可访问。"));
+     const a=node("a","","打开维基文库本回简体原文 →");a.href=sourceURL;a.target="_blank";a.rel="noopener noreferrer";
+     errorEl.append(a);$("reading-content").replaceChildren(errorEl);
+     $("load-status").textContent="正文暂不可用";
+   }
+ }
+ fetch("shuihu/"+ed+"/index.json").then(r=>r.ok?r.json():null).then(d=>{
+  const found=d?.chapters?.find(c=>Number(c.number)===n);if(found?.title)$("chapter-title").textContent=found.title;
+ }).catch(()=>{});
+ load();
+})();
+</script>
+</body></html>
