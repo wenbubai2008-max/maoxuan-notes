@@ -327,7 +327,9 @@ def method_page(arts):
             hits = [x for x in allarts if x['vol'] == vol and mid in x.get('methods', [])]
             if hits:
                 out.append(f'{VOL_NAME[vol]}：' + '、'.join(f'<a href="v{vol}/{x["no"]:02d}.html">{x["no"]}《{esc(x["title"])}》</a>' for x in hits))
-        rel = f'<dt>全书相关篇目</dt><dd class="rel">{"；".join(out)}</dd>' if out else ''
+        total = sum(1 for x in allarts if mid in x.get('methods', []))
+        rel = (f'<dt>全书相关篇目</dt><dd class="rel"><details><summary>共 {total} 篇用到或检验了这一条（点开）</summary>'
+               f'{"；".join(out)}</details></dd>') if out else ''
         blk = m.group(0)
         return blk.replace('<dt class="fail">', rel + '<dt class="fail">', 1)
     body = re.sub(r'<div class="method" id="(m\d\d)">.*?</dl>', backlinks, body, flags=re.S)
