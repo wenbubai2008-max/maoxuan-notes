@@ -215,6 +215,7 @@ def split_vol24(path):
         title=re.sub(r'\d+.*$','',title) or title
         title=title.replace('论人民民主专政纪念中国共产党二十八周年','论人民民主专政')
         if title.startswith('附录'): title='附录：关于若干历史问题的决议'
+        title=title.replace('的的作战方针','的作战方针')
         d=DATE.match(ne[di][1]).group(1).replace(' ','')
         # 页中间开始的短文：标题行（居中、短）后紧跟日期行
         cuts=[(ne[di][0],title,d)]
