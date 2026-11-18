@@ -31,17 +31,15 @@ def trim_paragraphs(paragraphs: list[str]) -> list[str]:
     return kept
 
 def normalize_prose_breaks(text: str) -> str:
-    """Merge accidental hard wraps in prose while preserving indented rosters/verse.
+    """Remove hard wraps inside prose; keep deliberately indented rosters/verse.
 
-    Source pages often put a newline in the middle of a word or phrase, e.g.
-    “大相国寺\\n住持” or “包裹\\n、腰包”. We retain clearly structured
-    lines (two or more explicitly indented rows), not ordinary hard wraps.
+    Example of a false break in the source: 大相国寺\n住持.
     """
-    value = str(text).replace("\\r\\n", "\\n").replace("\\r", "\\n")
-    lines = value.split("\\n")
-    if len(lines) >= 3 and sum(bool(re.match(r"^[ \\t\\u3000]{2,}\\S", line)) for line in lines[1:]) >= 2:
+    value = str(text).replace("\r\n", "\n").replace("\r", "\n")
+    lines = value.split("\n")
+    if len(lines) >= 3 and sum(bool(re.match(r"^[ \t\u3000]{2,}\S", line)) for line in lines[1:]) >= 2:
         return value
-    return re.sub(r"[ \\t\\u3000]*\\n[ \\t\\u3000]*", "", value)
+    return re.sub(r"[ \t\u3000]*\n[ \t\u3000]*", "", value)
 
 def clean_record(data: dict) -> tuple[dict, int]:
     original = data.get("paragraphs")
