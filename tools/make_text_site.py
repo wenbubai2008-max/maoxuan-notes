@@ -9,18 +9,24 @@ import build as B
 
 def main():
     data = json.load(open(os.path.join(ROOT, 'build', 'text.json'), encoding='utf-8'))
-    arts = B.load_articles()
-    by_title = {a['title']: a['no'] for a in arts}
+    by_title = {a['title']: a['no'] for a in B.load_articles('1')}
+    by_title5 = {a['title']: a['no'] for a in B.load_articles('5')}
+    n5 = 0
     outdir = os.path.join(ROOT, 'build', 'site-text')
     os.makedirs(outdir, exist_ok=True)
     manifest = []
     for i, x in enumerate(data, 1):
         f = f'{i:03d}.html'
-        v1 = by_title.get(x['title'])
-        manifest.append({'file': f, 'vol': x['vol'], 'title': x['title'], 'date': x['date'], 'v1': v1,
-                         'chars': len(''.join(x['paras']))})
+        v1 = by_title.get(x['title']) if x['vol'] != '5' else None
+        v5 = by_title5.get(x['title']) if x['vol'] == '5' else None
+        rec = {'file': f, 'vol': x['vol'], 'title': x['title'], 'date': x['date'], 'v1': v1,
+               'chars': len(''.join(x['paras']))}
+        if x['vol'] == '5':
+            n5 += 1; rec['v5no'] = n5; rec['v5'] = v5
+        manifest.append(rec)
         root = '../'
-        back = (f'<a class="btn-link" href="{root}v1/{v1:02d}.html">← 看这篇的注解和深读</a>' if v1 else '')
+        back = (f'<a class="btn-link" href="{root}v1/{v1:02d}.html">← 看这篇的注解和深读</a>' if v1 else
+                f'<a class="btn-link" href="{root}v5/{v5:02d}.html">← 看这篇的注解和分析</a>' if v5 else '')
         head = (f'<div class="notice"><div><b>题解。</b>{B.esc(x["headnote"])}</div></div>' if x['headnote'] else '')
         paras = ''.join(f'<p>{B.esc(p)}</p>' for p in x['paras'])
         notes = ''.join(f'<li>{B.esc(n)}</li>' for n in x['notes'])

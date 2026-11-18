@@ -9,7 +9,8 @@
 import argparse, json, os, re, subprocess, sys
 
 CJK = r'[　-〿一-鿿＀-￯“”‘’—…·]'
-DATE = re.compile(r'^\s*[（(]\s*(一九[〇○零一二三四五六七八九十]{2}年[^）)]{0,40})[）)]\s*$')
+DATE = re.compile(r'^\s*[（(]\s*(一九[〇○零0-9一二三四五六七八九十 ]{2,6}年[^）)]{0,40})[）)]?\s*$')
+DATE5 = re.compile(r'^\s*[（(]?\s*(一九[〇○零0-9一二三四五六七八九十 ]{2,6}年[^）)]{0,40})[）)]?\s*$')
 MARK_ONLY = re.compile(r'^[\s〔〕\[\]０-９\d⑴-⒇（）()]+$')
 
 def layout_lines(path):
@@ -33,7 +34,7 @@ def is_page_furniture(s, title):
             (ss.startswith(t[:6]) and re.search(r'\d+$', ss) is not None and len(ss) <= len(t) + 6) or
             re.fullmatch(r'目录\d*', ss) is not None)
 
-def parse_article(lines, start, end, title):
+def parse_article(lines, start, end, title, head_flush=False):
     paras, head, notes, body = [], [], [], []
     mode, in_notes = 'body', False
     for raw in lines[start:end]:
@@ -49,6 +50,8 @@ def parse_article(lines, start, end, title):
             elif notes and not is_page_furniture(s, title):
                 notes[-1] += s
             continue
+        if s.startswith('（《毛泽东选集》') or re.fullmatch(r'-{5,}.*', s):
+            continue
         if is_page_furniture(s, title):
             if mode == 'head':
                 mode = 'body'
@@ -60,7 +63,7 @@ def parse_article(lines, start, end, title):
         if s.startswith('*'):
             mode = 'head'; head.append(s.lstrip('*').strip()); continue
         if mode == 'head':
-            if lead >= 4:
+            if lead >= 4 or (head_flush and lead == 0):
                 head[-1] += s; continue
             mode = 'body'
         body.append(s)
@@ -124,18 +127,23 @@ def split_vol5(V):
                 s = V[j].strip()
                 if not s or s.replace(' ', '') == key:
                     continue
-                if DATE.match(V[j]):
-                    hit = (i, j, DATE.match(V[j]).group(1))
+                if len(s) <= 40 and DATE5.match(V[j]):
+                    hit = (i, j, DATE5.match(V[j]).group(1))
                 break
             if hit:
                 break
         if not hit:
             print('UNMATCHED 5:', t, file=sys.stderr); continue
-        arts.append((t, hit[2], hit[1])); start = hit[1] + 1
+        top = hit[0]
+        for k in range(hit[0] - 1, max(hit[0] - 10, 0), -1):
+            if V[k].strip().replace(' ', '').replace('—', '-') == key:
+                top = k
+        arts.append((t, hit[2], hit[1], top)); start = hit[1] + 1
     out = []
-    for n, (t, d, line) in enumerate(arts):
-        end = arts[n + 1][2] - 4 if n + 1 < len(arts) else len(V)
-        head, paras, notes = parse_article(V, line + 1, end, t)
+    for n, (t, d, line, _title_line) in enumerate(arts):
+        end = arts[n + 1][3] if n + 1 < len(arts) else len(V)
+        head, paras, notes = parse_article(V, line + 1, end, t, head_flush=True)
+        d = d.replace(' ', '').replace('0', '〇')
         out.append({'vol': '5', 'title': t, 'date': d, 'headnote': head, 'paras': paras, 'notes': notes})
     return out
 

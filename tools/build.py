@@ -5,7 +5,8 @@
   content/vol1/NN.json   每篇一个文件（结构见 README）
   content/method.html    总论页正文
   content/_*.html        个别篇目的附加栏目（深读等）
-运行：python3 tools/build.py   → 生成 index.html、method.html、v1/NN.html
+  content/vol5/NN.json   第五卷重点篇，NN 是第五卷目录里的篇序（1—70）
+运行：python3 tools/build.py   → 生成 index.html、maoxuan.html、method.html、v1/NN.html、v5/NN.html、v5/index.html
 """
 import hashlib, html, json, os, re, glob
 
@@ -26,10 +27,13 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
 def esc(s):
     return html.escape(s, quote=True)
 
-def load_articles():
+VOL_NAME = {'1': '第一卷', '5': '第五卷'}
+
+def load_articles(vol='1'):
     arts = []
-    for f in sorted(glob.glob(C('vol1', '*.json'))):
+    for f in sorted(glob.glob(C(f'vol{vol}', '*.json'))):
         a = json.load(open(f, encoding='utf-8'))
+        a['vol'] = vol
         arts.append(a)
     return arts
 
@@ -41,9 +45,9 @@ def text_locked():
     p = os.path.join(ROOT, 'text', '001.html')
     return os.path.exists(p) and 'staticrypt' in open(p, encoding='utf-8').read(20000).lower()
 
-def text_link_for(no, root):
+def text_link_for(no, root, vol='1'):
     for t in load_text_index():
-        if t.get('v1') == no:
+        if t.get(f'v{vol}') == no:
             return f'{root}text/{t["file"]}'
     return None
 
@@ -64,6 +68,7 @@ def topbar(root, current):
         return (f'<header class="topbar"><a class="brand" href="{root}index.html">读书'
                 f'<small>读过的书，和读书时想清楚的事</small></a></header>\n')
     items = [('home', '本书首页', f'{root}maoxuan.html'), ('v1', '第一卷', f'{root}v1/01.html'),
+             ('v5', '第五卷', f'{root}v5/index.html'),
              ('method', '总论：思维方法', f'{root}method.html'), ('text', '原文', f'{root}text/index.html')]
     links = ''.join(
         f'<a href="{u}"{" aria-current=\"page\"" if k == current else ""}>{t}</a>' for k, t, u in items)
@@ -72,11 +77,13 @@ def topbar(root, current):
             f'<nav class="sitenav" aria-label="本书栏目">{links}</nav></header>\n')
 
 def foot(root, shelf=False):
-    return (f'<footer class="sitefoot"><p>{"读书笔记由 Claude 协助撰写，供个人学习参考。" if shelf else "注解与分析由 Claude 撰写，供个人学习参考。原文由人民出版社 1967 年版提取，个别分段或文字可能有误，引用前请核对原书。"}</p></footer>\n'
+    return (f'<footer class="sitefoot"><p>{"读书笔记由 Claude 协助撰写，供个人学习参考。" if shelf else "注解与分析由 Claude 撰写，供个人学习参考。原文据人民出版社版本提取（一至四卷 1967 年版，第五卷 1977 年版），个别分段或文字可能有误，引用前请核对原书。"}</p></footer>\n'
             f'<script src="{root}assets/site.js?v={asset_ver()}"></script>\n</body>\n</html>\n')
 
 def toc(arts, root, cur_no):
-    out = ['<nav class="toc" aria-label="第一卷目录"><h2>第一卷</h2>']
+    vol = arts[0]['vol']
+    vn = VOL_NAME[vol]
+    out = [f'<nav class="toc" aria-label="{vn}目录"><h2>{vn}</h2>']
     period = None
     for a in arts:
         if a['period'] != period:
@@ -85,8 +92,11 @@ def toc(arts, root, cur_no):
             period = a['period']
             out.append(f'<div class="period">{esc(period)}</div><ol>')
         on = ' class="on"' if a['no'] == cur_no else ''
-        out.append(f'<li{on}><a href="{root}v1/{a["no"]:02d}.html"><span class="n">{a["no"]}</span>{esc(a["title"])}</a></li>')
-    out.append('</ol><div class="more">按第一版（1951 年起）编排，共 17 篇。第二版在《星星之火，可以燎原》后加入《反对本本主义》。</div></nav>')
+        out.append(f'<li{on}><a href="{root}v{vol}/{a["no"]:02d}.html"><span class="n">{a["no"]}</span>{esc(a["title"])}</a></li>')
+    if vol == '5':
+        out.append(f'</ol><div class="more">第五卷共 70 篇，这里先做 {len(arts)} 篇重点篇，序号是原书目录里的篇序。<a href="{root}v5/index.html">第五卷全部篇目 →</a></div></nav>')
+    else:
+        out.append('</ol><div class="more">按第一版（1951 年起）编排，共 17 篇。第二版在《星星之火，可以燎原》后加入《反对本本主义》。</div></nav>')
     return '\n'.join(out)
 
 def wrap_terms(text, notes, start):
@@ -102,7 +112,7 @@ def wrap_terms(text, notes, start):
 
 def render_sections(a, root='../'):
     parts, num = [], 1
-    link = text_link_for(a['no'], root)
+    link = text_link_for(a['no'], root, a['vol'])
     for si, s in enumerate(a['sections'], 1):
         notes = s.get('notes', [])
         summ = wrap_terms(s['sum'], notes, num)
@@ -126,6 +136,7 @@ def ul(items):
 
 def article_page(a, arts):
     root = '../'
+    vol = a['vol']; key = f'v{vol}-{a["no"]:02d}'; tl = text_link_for(a['no'], root, vol)
     secs, nnotes = render_sections(a)
     tabs = [('text', '正文与注解'), ('read', '读法与应用'), ('background', '题解与背景')]
     extras = a.get('extra_tabs', [])
@@ -144,6 +155,7 @@ def article_page(a, arts):
             f'<h2><span class="k">方法</span>这篇里用到的思维方法</h2><ul class="mlinks">{method_links}</ul>'
             + (f'<p>{esc(a["method_note"])}</p>' if a.get('method_note') else '') +
             f'<h2><span class="k">应用</span>今天怎么用</h2>{ul(a["use"])}<p class="note-s">这些应用借用的是方法的结构，不是原文的结论。商业和日常生活的目标、规则、代价都和战争与政治不同，用之前请对照总论里相应各条的“迁移边界”。</p>'
+            + (f'<h2><span class="k">后来</span>后来发生了什么</h2>{ul(a["after"])}' if a.get('after') else '') +
             f'<h2><span class="k">争议</span>争议与局限</h2>{ul(a["debate"])}</section>')
     if a.get('background_html'):
         bg_inner = open(C(a['background_html']), encoding='utf-8').read()
@@ -154,6 +166,7 @@ def article_page(a, arts):
     for e in extras:
         body = open(C(e['file']), encoding='utf-8').read()
         extra_html += f'<section class="panel {e.get("cls", "long")}" id="p-{e["id"]}" role="tabpanel" aria-labelledby="t-{e["id"]}" hidden>{body}</section>\n'
+    vol = a['vol']; key = f'v{vol}-{a["no"]:02d}'; tl = text_link_for(a['no'], root, vol)
     prev_next = []
     idx = [x['no'] for x in arts].index(a['no'])
     if idx > 0:
@@ -162,10 +175,10 @@ def article_page(a, arts):
         prev_next.append('<span></span>')
     if idx + 1 < len(arts):
         n = arts[idx + 1]; prev_next.append(f'<a href="{n["no"]:02d}.html">{esc(n["title"])} →</a>')
-    page = (head(f'{a["title"]} · 毛选 · 读书', root) + topbar(root, 'v1') + '<div class="shell">' + toc(arts, root, a['no']) +
-            f'<main data-root="{root}" data-repo="{REPO}" data-notes="content/notes/v1-{a["no"]:02d}.json"' +
-            (f' data-para="{root}text/para/v1-{a["no"]:02d}.json">' if os.path.exists(os.path.join(ROOT, 'text', 'para', f'v1-{a["no"]:02d}.json')) else '>') +
-            f'<div class="eyebrow">第一卷 · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
+    page = (head(f'{a["title"]} · 毛选 · 读书', root) + topbar(root, f'v{vol}') + '<div class="shell">' + toc(arts, root, a['no']) +
+            f'<main data-root="{root}" data-repo="{REPO}" data-notes="content/notes/{key}.json"' +
+            (f' data-para="{root}text/para/{key}.json">' if os.path.exists(os.path.join(ROOT, 'text', 'para', f'{key}.json')) else '>') +
+            f'<div class="eyebrow">{VOL_NAME[vol]} · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
             f'<h1>{esc(a["title"])}</h1><p class="date">（{esc(a["date"])}）</p>'
             f'<div class="meta">{meta}</div>'
             f'<div class="tabs" role="tablist" aria-label="本篇内容">{btns}</div>'
@@ -174,7 +187,7 @@ def article_page(a, arts):
             '<div class="row"><input id="orig-pw" type="password" autocomplete="current-password" placeholder="密码">'
             '<button type="submit">确定</button></div>'
             '<label class="rem"><input type="checkbox" id="orig-rem" checked> 在这台设备上记住</label><p class="err" id="orig-err" hidden>密码不对，请再试一次。</p></form>'
-            + (f'<div class="notice"><div><b>原文。</b><a href="{text_link_for(a["no"], root)}">阅读这篇的原文 →</a>{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>' if text_link_for(a['no'], root) else '<div class="notice"><div>下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>') +
+            + (f'<div class="notice"><div><b>原文。</b><a href="{tl}">阅读这篇的原文 →</a>{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>' if tl else '<div class="notice"><div>下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>') +
             f'<p class="mx-notes-entry"><a href="#" id="mx-notes-btn">写笔记</a></p>'
             f'{secs}</section>\n{read}\n{bg}\n{extra_html}'
             '<dialog id="mx-token" class="mx-dlg"><h3>GitHub 令牌</h3>'
@@ -185,11 +198,13 @@ def article_page(a, arts):
             f'<div class="pager">{"".join(prev_next)}</div></main></div>\n' + foot(root))
     return page
 
-def home_page(arts):
-    root = ''
-    rows = ''.join(
-        f'<li><a href="v1/{a["no"]:02d}.html"><span class="n">{a["no"]}</span><span class="t">{esc(a["title"])}'
+def biglist(arts):
+    return ''.join(
+        f'<li><a href="v{a["vol"]}/{a["no"]:02d}.html"><span class="n">{a["no"]}</span><span class="t">{esc(a["title"])}'
         f'<span class="d">{esc(a["date"])}</span></span><span class="g">{esc(a["gist"])}</span></a></li>' for a in arts)
+
+def home_page(arts, arts5):
+    root = ''
     body = f'''<div class="shell wide"><main>
 <div class="eyebrow"><a href="index.html">书架</a> › 毛泽东选集</div>
 <h1>《毛泽东选集》逐篇注解与深读</h1>
@@ -197,15 +212,39 @@ def home_page(arts):
 <div class="cards">
   <a class="card" href="method.html"><b>总论：思维方法</b><span>从五卷里提炼的 12 条底层逻辑，每条都标出处、用法和失灵条件。</span></a>
   <a class="card" href="v1/01.html"><b>样章：中国社会各阶级的分析</b><span>最完整的一篇，含深读、版本变化和管理视角。</span></a>
+  <a class="card" href="v5/index.html"><b>第五卷：1949—1957</b><span>执政以后的文章。先做 {len(arts5)} 篇重点篇，其余 {70 - len(arts5)} 篇列出目录、可读原文。</span></a>
 </div>
-<h2 class="vh">第一卷 <small>1925—1937 · 17 篇</small></h2>
-<ol class="biglist">{rows}</ol>
-<h2 class="vh">第二至五卷 <small>待做</small></h2>
-<p class="note-s">第一卷完成后继续。</p>
+<h2 class="vh">第一卷 <small>1925—1937 · {len(arts)} 篇</small></h2>
+<ol class="biglist">{biglist(arts)}</ol>
+<h2 class="vh">第五卷 <small>1949—1957 · 重点 {len(arts5)} 篇 · <a href="v5/index.html">全部 70 篇目录</a></small></h2>
+<ol class="biglist">{biglist(arts5)}</ol>
+<h2 class="vh">第二至四卷 <small>待做</small></h2>
+<p class="note-s">原文已经可以在“原文”栏目里读。</p>
 </main></div>
 
 '''
     return head('毛泽东选集 · 读书', root) + topbar(root, 'home') + body + foot(root)
+
+def v5_index_page(arts5):
+    root = '../'
+    ann = {a['no']: a for a in arts5}
+    items = [t for t in load_text_index() if t['vol'] == '5']
+    intro = open(C('vol5_intro.html'), encoding='utf-8').read() if os.path.exists(C('vol5_intro.html')) else ''
+    rows = []
+    for t in items:
+        no = t['v5no']; a = ann.get(no)
+        if a:
+            rows.append(f'<li class="has-ann"><a href="{no:02d}.html"><span class="n">{no}</span><span class="t">{esc(t["title"])}'
+                        f'<span class="d">{esc(t["date"])}</span></span><span class="g">{esc(a["gist"])}</span></a>'
+                        f'<a class="tag-note" href="{root}text/{t["file"]}">原文</a></li>')
+        else:
+            rows.append(f'<li><a href="{root}text/{t["file"]}"><span class="n">{no}</span><span class="t">{esc(t["title"])}'
+                        f'<span class="d">{esc(t["date"])}</span></span><span class="g">原文 · 约 {t["chars"]//100/10:.1f} 千字</span></a></li>')
+    body = (f'<div class="shell wide"><main><div class="eyebrow"><a href="{root}maoxuan.html">毛泽东选集</a> › 第五卷</div>'
+            f'<h1>第五卷 <small class="h1s">1949—1957</small></h1>{intro}'
+            f'<p class="note-s">共 {len(items)} 篇。带摘要的 {len(arts5)} 篇已做注解和分析，点进去看；其余直接打开原文{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。</p>'
+            f'<ol class="biglist textlist v5list">{"".join(rows)}</ol></main></div>\n')
+    return head('第五卷 · 毛选 · 读书', root) + topbar(root, 'v5') + body + foot(root)
 
 def shelf_page():
     books = json.load(open(C('books.json'), encoding='utf-8'))
@@ -227,9 +266,10 @@ def method_page(arts):
     body = open(C('method.html'), encoding='utf-8').read()
     # [[v1-NN]] → 链接到篇目
     def link(m):
-        no = int(m.group(1)); a = next(x for x in arts if x['no'] == no)
-        return f'<a href="v1/{no:02d}.html">《{esc(a["title"])}》</a>'
-    body = re.sub(r'\[\[v1-(\d\d)\]\]', link, body)
+        vol, no = m.group(1), int(m.group(2))
+        a = next(x for x in arts + load_articles('5') if x['vol'] == vol and x['no'] == no)
+        return f'<a href="v{vol}/{no:02d}.html">《{esc(a["title"])}》</a>'
+    body = re.sub(r'\[\[v([15])-(\d\d)\]\]', link, body)
     return head('总论：思维方法 · 毛选 · 读书', root) + topbar(root, 'method') + f'<div class="shell wide"><main class="long">{body}</main></div>\n' + foot(root)
 
 def text_index_page():
@@ -240,11 +280,11 @@ def text_index_page():
     groups = [('一至四卷', '1925—1949', [t for t in items if t['vol'] != '5']), ('第五卷', '1949—1957', [t for t in items if t['vol'] == '5'])]
     body = ['<div class="shell wide"><main><div class="eyebrow">原文</div><h1>《毛泽东选集》原文</h1>',
             ('<p class="lede" id="pw-note">2026 年 12 月 31 日前，原文仅供个人阅读，打开时需要输入密码，勾选“在这台设备上记住密码”后，同一台设备只需输入一次。2027 年 1 月 1 日起自动公开，不再需要密码。</p>' if text_locked() else ''),
-            f'<p class="note-s">共 {len(items)} 篇。由原书 PDF 自动提取，个别篇目的分段可能不准确；另有约十篇因排版问题暂未收入。标有“注解”的篇目可以对照阅读。</p>']
+            f'<p class="note-s">共 {len(items)} 篇。由原书 PDF 自动提取，个别篇目的分段可能不准确；一至四卷另有几篇因排版问题暂未收入。标有“注解”的篇目可以对照阅读。</p>']
     for name, years, lst in groups:
         body.append(f'<h2 class="vh">{name} <small>{years} · {len(lst)} 篇</small></h2><ol class="biglist textlist">')
         for t in lst:
-            tag = f'<a class="tag-note" href="{root}v1/{t["v1"]:02d}.html">注解</a>' if t.get('v1') else ''
+            tag = ''.join(f'<a class="tag-note" href="{root}v{v}/{t["v" + v]:02d}.html">注解</a>' for v in ('1', '5') if t.get('v' + v))
             body.append(f'<li><a href="{t["file"]}"><span class="n">{int(t["file"][:3])}</span><span class="t">{esc(t["title"])}'
                         f'<span class="d">{esc(t["date"])}</span></span><span class="g">约 {t["chars"]//100/10:.1f} 千字</span></a>{tag}</li>')
         body.append('</ol>')
@@ -252,18 +292,22 @@ def text_index_page():
     return head('原文 · 毛选 · 读书', root) + topbar(root, 'text') + ''.join(body) + foot(root)
 
 def main():
-    arts = load_articles()
+    arts = load_articles('1')
+    arts5 = load_articles('5')
     tip = text_index_page()
     if tip:
         os.makedirs(os.path.join(ROOT, 'text'), exist_ok=True)
         open(os.path.join(ROOT, 'text', 'index.html'), 'w', encoding='utf-8').write(tip)
-    os.makedirs(os.path.join(ROOT, 'v1'), exist_ok=True)
-    for a in arts:
-        open(os.path.join(ROOT, 'v1', f'{a["no"]:02d}.html'), 'w', encoding='utf-8').write(article_page(a, arts))
-    open(os.path.join(ROOT, 'maoxuan.html'), 'w', encoding='utf-8').write(home_page(arts))
+    for vol, lst in (('1', arts), ('5', arts5)):
+        os.makedirs(os.path.join(ROOT, f'v{vol}'), exist_ok=True)
+        for a in lst:
+            open(os.path.join(ROOT, f'v{vol}', f'{a["no"]:02d}.html'), 'w', encoding='utf-8').write(article_page(a, lst))
+    if arts5:
+        open(os.path.join(ROOT, 'v5', 'index.html'), 'w', encoding='utf-8').write(v5_index_page(arts5))
+    open(os.path.join(ROOT, 'maoxuan.html'), 'w', encoding='utf-8').write(home_page(arts, arts5))
     open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8').write(shelf_page())
     open(os.path.join(ROOT, 'method.html'), 'w', encoding='utf-8').write(method_page(arts))
-    print(f'生成 {len(arts)} 篇 + 书架 + 本书首页 + 总论')
+    print(f'生成 第一卷 {len(arts)} 篇 + 第五卷 {len(arts5)} 篇 + 书架 + 本书首页 + 总论')
 
 if __name__ == '__main__':
     main()

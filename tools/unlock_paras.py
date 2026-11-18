@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import hashes
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 pw = os.environ['MAOXUAN_PASSWORD']
 n = 0
-for f in sorted(glob.glob(os.path.join(ROOT, 'text', 'para', 'v1-*.json'))):
+for f in sorted(glob.glob(os.path.join(ROOT, 'text', 'para', 'v[0-9]-*.json'))):
     rec = json.load(open(f, encoding='utf-8'))
     if 'ct' not in rec:
         continue
