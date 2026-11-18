@@ -315,6 +315,19 @@ def method_page(arts):
         vol, no = m.group(1), int(m.group(2))
         a = next(x for x in arts + load_articles('5') if x['vol'] == vol and x['no'] == no)
         return f'<a href="v{vol}/{no:02d}.html">《{esc(a["title"])}》</a>'
+    # 每条方法后面自动列出全书里标注了这条方法的篇目
+    allarts = arts + load_articles('5')
+    def backlinks(m):
+        mid = m.group(1)
+        out = []
+        for vol in ('1', '5'):
+            hits = [x for x in allarts if x['vol'] == vol and mid in x.get('methods', [])]
+            if hits:
+                out.append(f'{VOL_NAME[vol]}：' + '、'.join(f'<a href="v{vol}/{x["no"]:02d}.html">{x["no"]}《{esc(x["title"])}》</a>' for x in hits))
+        rel = f'<dt>全书相关篇目</dt><dd class="rel">{"；".join(out)}</dd>' if out else ''
+        blk = m.group(0)
+        return blk.replace('<dt class="fail">', rel + '<dt class="fail">', 1)
+    body = re.sub(r'<div class="method" id="(m\d\d)">.*?</dl>', backlinks, body, flags=re.S)
     body = re.sub(r'\[\[v([15])-(\d\d)\]\]', link, body)
     return head('总论：思维方法 · 毛选 · 读书', root) + topbar(root, 'method') + f'<div class="shell wide"><main class="long">{body}</main></div>\n' + foot(root)
 
