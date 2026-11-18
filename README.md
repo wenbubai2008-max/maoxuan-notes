@@ -5,9 +5,11 @@
 ## 结构
 
 ```
-index.html            书架首页（四本书，书目见 content/books.json）
+index.html            书架首页（《毛泽东选集》和《水浒传》两本书，书目见 content/books.json）
 maoxuan.html          《毛泽东选集》本书首页（生成）
-shuihu.html           《水浒传》金圣叹七十回本目录
+shuihu.html           《水浒传》三个版本的选择页
+shuihu-70.html        金圣叹七十回本独立目录
+assets/shuihu-versions.css 三版本选择页样式
 shuihu-read.html      《水浒传》简体原文与直接显示的金圣叹原批
 assets/shuihu-jin.css 金圣叹版本专用样式
 assets/shuihu-more.css 容与堂本与百二十回本专用样式
@@ -78,3 +80,7 @@ python3 tools/build.py
 - `assets/shuihu-more-data.js`：各版来源说明及已撰写并明确署名为**本站读注**的少量随文点评；只按与相关正文匹配的关键词插入。不将金圣叹的批语复制给其他版本，也不伪称这些本站点评是李卓吾原批。
 - `tools/fetch_shuihu_more.py`：从维基文库相应版本提取独立原文，`.github/workflows/shuihu-more.yml` 在 GitHub Actions 中执行，先提交起始几回，再逐步补齐余回；实际缓存量以各版本 `status.json` 为准。
 - 两本明代评点本的完整历史眉批、夹批和总评并未保留在当前维基文库正文转录里，因此尚未上线为原批。若未来取得可核查的原批影印资料，应另行校勘、注明回页后才能插入。
+
+## 书架导航
+
+书架只显示《毛泽东选集》和《水浒传》两本书。点击《水浒传》进入 `shuihu.html` 选择金圣叹七十回本、容与堂百回本或袁无涯系百二十回本。各自目录分别是 `shuihu-70.html`、`shuihu-100.html`、`shuihu-120.html`；原文与批注数据不合并、不互换。七十回本阅读页 `shuihu-read.html` 返回到 `shuihu-70.html#chapters`。
