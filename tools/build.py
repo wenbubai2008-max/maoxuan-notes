@@ -48,7 +48,7 @@ def topbar(root, current):
             f'<nav class="sitenav" aria-label="网站栏目">{links}</nav></header>\n')
 
 def foot(root):
-    return (f'<footer class="sitefoot"><p>注解与分析由 Claude 撰写，供个人学习参考。正文计划于 2027 年 1 月 1 日后导入。</p></footer>\n'
+    return (f'<footer class="sitefoot"><p>注解与分析由 Claude 撰写，供个人学习参考。第一卷原文现已提供网页对照阅读，原文文字由1967年版PDF提取，引用前请核对原扫描件。</p></footer>\n'
             f'<script src="{root}assets/site.js"></script>\n</body>\n</html>\n')
 
 def toc(arts, root, cur_no):
@@ -87,7 +87,7 @@ def render_sections(a):
             lis.append(f'<li class="note" id="n{num + i}"><div class="head"><span class="num">{num + i}</span>'
                        f'<b>{esc(n["term"])}</b><span class="kind">{esc(n.get("kind", "注"))}</span></div>{esc(n["text"])}</li>')
         num += len(notes)
-        slot = s.get('slot', '原文 · 待导入')
+        slot = s.get('slot', '原文请见对照页')
         parts.append(f'<div class="sec"><div><h3><span class="sn">§{si}</span>{esc(s["h"])}</h3>'
                      f'<span class="slot">{esc(slot)}</span>{q}<p class="summary">{summ}</p></div>'
                      f'<ol class="notes">{"".join(lis)}</ol></div>')
@@ -141,7 +141,7 @@ def article_page(a, arts):
             f'<p><a class="compare-entry" href="{root}compare.html?article={a["no"]}">打开原文对照阅读 →</a></p>'
             f'<div class="tabs" role="tablist" aria-label="本篇内容">{btns}</div>'
             f'<section class="panel" id="p-text" role="tabpanel" aria-labelledby="t-text">'
-            f'<div class="notice"><div><b>原文位置。</b>网站暂不公开刊载全文。可以<a href="{root}compare.html?article={a["no"]}">用自己的本地 PDF 对照阅读</a>；当前每节先用段落提要占位，点下划线的词可以定位到右侧注解。</div></div>'
+            f'<div class="notice"><div><b>原文位置。</b>第一卷原文现已导入对照页。可以<a href="{root}compare.html?article={a["no"]}">直接对照原文与分析</a>；本页保留分节提要，点下划线的词可以定位到右侧注解。</div></div>'
             f'{secs}</section>\n{read}\n{bg}\n{extra_html}'
             f'<div class="pager">{"".join(prev_next)}</div></main></div>\n' + foot(root))
     return page
