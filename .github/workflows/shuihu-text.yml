@@ -1,0 +1,41 @@
+name: 构建水浒传简体原文和金批
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/fetch_shuihu.py'
+      - '.github/workflows/shuihu-text.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-water-margin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parser and traditional-to-simplified conversion
+        run: python -m pip install --disable-pip-version-check requests beautifulsoup4 opencc-python-reimplemented
+      - name: Build all chapters and extracted Jin commentary
+        run: python tools/fetch_shuihu.py
+      - name: Commit source-aligned chapter JSON
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add shuihu/text
+          if git diff --cached --quiet; then
+            echo "No text changes"
+            exit 0
+          fi
+          git commit -m "Generate simplified Water Margin text with Jin commentary"
+          for attempt in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            git pull --rebase origin main
+            sleep 2
+          done
+          exit 1
