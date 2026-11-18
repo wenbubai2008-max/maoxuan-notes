@@ -45,8 +45,22 @@
       if(sec === undefined) return;
       if(sec === null){ box.innerHTML = '<p class="orig-none">本节的原文和上一节在同一段落里，见上一节。</p>'; return; }
       var html = sec.map(function(p){ return '<p>'+esc(p)+'</p>'; }).join('');
-      var open = sec.join('').length < 2500 ? ' open' : '';
-      box.innerHTML = '<details'+open+'><summary>原文 · '+sec.length+' 段</summary><div class="orig-text">'+html+'</div></details>';
+      var short = sec.join('').length < 2500;
+      var col = box.parentNode, summ = col.querySelector('.summary'), quote = col.querySelector('.quote');
+      var label = document.createElement('div');
+      label.className = 'sum-label';
+      if(short){
+        // 短的节：原文在上、展开；提要在下，作为读完后的复核
+        box.innerHTML = '<details open><summary>原文 · '+sec.length+' 段</summary><div class="orig-text">'+html+'</div></details>';
+        col.insertBefore(box, quote || summ);
+        if(quote) quote.hidden = true;
+        label.textContent = '提要';
+      }else{
+        // 长的节：提要在上作导读，原文折叠在下
+        box.innerHTML = '<details><summary>原文 · '+sec.length+' 段（较长，点开阅读）</summary><div class="orig-text">'+html+'</div></details>';
+        label.textContent = '提要 · 导读';
+      }
+      if(summ && !col.querySelector('.sum-label')) col.insertBefore(label, summ);
     });
     if(bar) bar.hidden = true;
   }

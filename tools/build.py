@@ -7,7 +7,7 @@
   content/_*.html        个别篇目的附加栏目（深读等）
 运行：python3 tools/build.py   → 生成 index.html、method.html、v1/NN.html
 """
-import html, json, os, re, glob
+import hashlib, html, json, os, re, glob
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 C = lambda *p: os.path.join(ROOT, 'content', *p)
@@ -46,11 +46,17 @@ def text_link_for(no, root):
             return f'{root}text/{t["file"]}'
     return None
 
+def asset_ver():
+    h = hashlib.md5()
+    for f in ('site.css', 'site.js'):
+        h.update(open(os.path.join(ROOT, 'assets', f), 'rb').read())
+    return h.hexdigest()[:8]
+
 def head(title, root):
     return (f'<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             f'<title>{esc(title)}</title>\n{FONTS}\n'
-            f'<link rel="stylesheet" href="{root}assets/site.css">\n</head>\n<body>\n')
+            f'<link rel="stylesheet" href="{root}assets/site.css?v={asset_ver()}">\n</head>\n<body>\n')
 
 def topbar(root, current):
     items = [('home', '首页', f'{root}index.html'), ('v1', '第一卷', f'{root}v1/01.html'),
@@ -63,7 +69,7 @@ def topbar(root, current):
 
 def foot(root):
     return (f'<footer class="sitefoot"><p>注解与分析由 Claude 撰写，供个人学习参考。原文由人民出版社 1967 年版提取，个别分段或文字可能有误，引用前请核对原书。</p></footer>\n'
-            f'<script src="{root}assets/site.js"></script>\n</body>\n</html>\n')
+            f'<script src="{root}assets/site.js?v={asset_ver()}"></script>\n</body>\n</html>\n')
 
 def toc(arts, root, cur_no):
     out = ['<nav class="toc" aria-label="第一卷目录"><h2>第一卷</h2>']
