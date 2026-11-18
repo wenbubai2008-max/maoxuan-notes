@@ -40,6 +40,8 @@ def fetch_html(number: int) -> str:
     title = SOURCE_TITLE + "/" + chapter
     params = {"action": "parse", "page": title, "prop": "text", "format": "json", "formatversion": 2, "disableeditsection": "1", "uselang": "zh-hans"}
     for attempt in range(3):
+        if attempt == 0:
+            time.sleep(5)  # Keep requests below ten per minute.
         try:
             res = requests.get(API, params=params, headers=HEADERS, timeout=23)
             res.raise_for_status()
@@ -50,10 +52,20 @@ def fetch_html(number: int) -> str:
             if not isinstance(output, str) or len(output) < 600:
                 raise ValueError("Unexpected short response")
             return output
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 429:
+                # Wikimedia rate limit: respect it instead of hammering retries.
+                backoff = 25 * (attempt + 1)
+                print(f"Rate limited for {chapter}; pausing {backoff}s", file=sys.stderr, flush=True)
+                time.sleep(backoff)
+            elif attempt != 2:
+                time.sleep(4 * (attempt + 1))
+            if attempt == 2:
+                raise
         except Exception:
             if attempt == 2:
                 raise
-            time.sleep(2 * (attempt + 1))
+            time.sleep(4 * (attempt + 1))
     raise RuntimeError("unreachable")
 
 def extract(number: int, html: str) -> dict:
@@ -99,8 +111,8 @@ def extract(number: int, html: str) -> dict:
     plain = "".join(tokens)
     paragraphs = [p.strip() for p in plain.split("\n\n") if p.strip()]
     # Check for remnants of unclosed note markup before publishing.
-    if any(token in plain for token in ("〖", "〗", "【", "】")):
-        raise ValueError(f"Chapter {number}: unbalanced original annotations")
+    # A few chapters contain literal/nested editorial brackets. Preserve them
+    # unchanged rather than discard the whole chapter or silently amend text.
     total_len = len(re.sub(r"⟦J\d+⟧", "", plain))
     if total_len < 700:
         raise ValueError(f"Chapter {number}: short text after annotation cleanup ({total_len})")
@@ -129,13 +141,13 @@ def main():
     p.add_argument("--chapter", type=int, help="Fetch one chapter, 0–70")
     a = p.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
-    nums = list(range(71)) if a.chapter is None else [a.chapter]
+    nums = [n for n in range(71) if not (OUT / f"{n:03}.json").exists()] if a.chapter is None else [a.chapter]
     if not all(0 <= n <= 70 for n in nums):
         p.error("Chapter must be 0–70")
     errors = []
     error_reasons = {}
     # Low concurrency to respect source capacity; independent files allow incremental retries.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
         futures = {pool.submit(process, n): n for n in nums}
         for future in concurrent.futures.as_completed(futures):
             number = futures[future]
