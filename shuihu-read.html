@@ -72,45 +72,46 @@
  function render(data){
    if(!Array.isArray(data.paragraphs)||!data.paragraphs.length)throw new Error("原文数据为空");
    const notes=Array.isArray(data.jin_notes)?data.jin_notes:[];
-   const notesById=new Map(notes.map((note,i)=>[Number(note.id===undefined?i:note.id),note]));
+   const lookup=new Map(notes.map((note,i)=>[Number(note.id===undefined?i:note.id),note]));
+   const paragraphs=window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs;
    const target=$("chapter-content"),frag=document.createDocumentFragment();
    let noteCount=0;
-   function noteElement(note){
-     noteCount++;
-     const kind=note.kind||"金批";
-     const content=String(note.text||"").trim();
-     const block=kind==="总批"||content.length>82||content.includes("\n");
-     if(block){
-       const box=el("aside","jin-comment-block");
-       const heading=el("strong","jin-kind","【"+(kind==="金批"?"金批":kind)+"】");
-       box.append(heading,document.createTextNode(content));
-       return {element:box,block:true};
+   for(const raw of paragraphs){
+     if(typeof raw!=="string"||!raw.trim())continue;
+     const matches=[...raw.matchAll(/⟦J(\\d+)⟧/g)];
+     const prose=raw.replace(/⟦J\\d+⟧/g,"").trim();
+     if(prose)frag.appendChild(el("p","jin-text",prose));
+     const items=[];
+     for(const match of matches){
+       const note=lookup.get(Number(match[1]));
+       if(!note||!String(note.text||"").trim())continue;
+       const before=raw.slice(0,match.index).replace(/⟦J\\d+⟧/g,"").replace(/\\s+/g," ").trim();
+       const excerpt=before.length>=7?before.slice(-22):"";
+       items.push({kind:String(note.kind||"夹批"),text:String(note.text).trim(),excerpt});
      }
-     const inline=el("span","jin-comment-inline",content);
-     inline.setAttribute("aria-label","金圣叹"+kind+"："+content);
-     return {element:inline,block:false};
-   }
-   for(const paragraph of (window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs)){
-     let p=el("p","jin-text");
-     const parts=paragraph.split(/(⟦J\d+⟧)/g);
-     for(const part of parts){
-       const marker=part.match(/^⟦J(\d+)⟧$/);
-       if(!marker){if(part)p.appendChild(document.createTextNode(part));continue}
-       const note=notesById.get(Number(marker[1]));
-       if(!note){p.appendChild(document.createTextNode(part));continue}
-       const item=noteElement(note);
-       if(item.block){
-         if(p.textContent.trim()){frag.appendChild(p);p=el("p","jin-text")}
-         frag.appendChild(item.element);
-       }else{
-         p.appendChild(item.element);
+     if(!items.length)continue;
+     noteCount+=items.length;
+     const group=el("section","jin-comment-stack");
+     const header=el("div","jin-comment-stack-heading","金圣叹评");
+     const tally=el("span","jin-comment-count",items.length+" 则");
+     header.appendChild(tally);group.appendChild(header);
+     const list=el("div","jin-comment-list");
+     items.forEach((item,i)=>{
+       const piece=el("div","jin-comment-item");
+       if(item.excerpt){
+         const quote=el("span","jin-comment-context","对应原文：……"+item.excerpt);
+         piece.appendChild(quote);
        }
-     }
-     if(p.textContent.trim())frag.appendChild(p);
+       const body=el("div","jin-comment-body");
+       body.appendChild(el("span","jin-comment-type",item.kind));
+       body.appendChild(document.createTextNode(item.text));
+       piece.appendChild(body);list.appendChild(piece);
+     });
+     group.appendChild(list);frag.appendChild(group);
    }
    if(!frag.childNodes.length)throw new Error("正文内容为空");
    target.replaceChildren(frag);
-   $("source-status").textContent=chapter.label+" · 金圣叹批语 "+noteCount+" 条";
+   $("source-status").textContent=chapter.label+" · 金圣叹评语 "+noteCount+" 则";
    $("source-link").href=data.source||link;
  }
  async function load(){
