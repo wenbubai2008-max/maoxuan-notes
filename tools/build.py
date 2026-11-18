@@ -115,7 +115,7 @@ def article_page(a, arts):
             f'<h2><span class="k">主旨</span>这篇在回答什么</h2><p class="lede">{esc(a["gist"])}</p>'
             f'<h2><span class="k">方法</span>这篇里用到的思维方法</h2><ul class="mlinks">{method_links}</ul>'
             + (f'<p>{esc(a["method_note"])}</p>' if a.get('method_note') else '') +
-            f'<h2><span class="k">应用</span>今天怎么用</h2>{ul(a["use"])}'
+            f'<h2><span class="k">应用</span>今天怎么用</h2>{ul(a["use"])}<p class="note-s">这些应用借用的是方法的结构，不是原文的结论。商业和日常生活的目标、规则、代价都和战争与政治不同，用之前请对照总论里相应各条的“迁移边界”。</p>'
             f'<h2><span class="k">争议</span>争议与局限</h2>{ul(a["debate"])}</section>')
     if a.get('background_html'):
         bg_inner = open(C(a['background_html']), encoding='utf-8').read()
