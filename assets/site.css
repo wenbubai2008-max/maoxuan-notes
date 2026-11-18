@@ -2,6 +2,8 @@
   /* 冷灰纸面 + 墨色正文 + 朱砂只用于注码和当前项；三栏：目录 / 正文提要 / 注解 */
   --paper:#eef1f3; --surface:#ffffff; --ink:#1d232b; --muted:#5d6874;
   --line:#d5dbe1; --accent:#b3261e; --accent-soft:#f7e4e2; --hl:#fff4cc;
+  --orig-bg:#fbf6ea; --orig-line:#cdb98c; --orig-ink:#2a2118; --orig-tag:#8a6a2e;
+  --ana:#2f5f8a; --ana-bg:#f5f8fb;
   --serif:"Noto Serif SC","Songti SC","STSong",serif;
   --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   color-scheme:light;
@@ -10,12 +12,14 @@
   :root:not([data-theme="light"]){
     --paper:#13171c; --surface:#1a1f26; --ink:#e4e8ec; --muted:#98a3ae;
     --line:#2b323b; --accent:#ee6a5e; --accent-soft:#3a2120; --hl:#3d3517;
+  --orig-bg:#211d16; --orig-line:#5c4b2c; --orig-ink:#ece2cf; --orig-tag:#c9a866; --ana:#7fb0db; --ana-bg:#18202a;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --paper:#13171c; --surface:#1a1f26; --ink:#e4e8ec; --muted:#98a3ae;
   --line:#2b323b; --accent:#ee6a5e; --accent-soft:#3a2120; --hl:#3d3517;
+  --orig-bg:#211d16; --orig-line:#5c4b2c; --orig-ink:#ece2cf; --orig-tag:#c9a866; --ana:#7fb0db; --ana-bg:#18202a;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -393,3 +397,43 @@ body:has(.bookshelf-home){background:#fbf9f8}
 .notice p{margin:.5em 0 0}
 .biglist a.tag-note{display:inline-block;padding:0 8px;border-radius:999px;border:1px solid var(--accent);color:var(--accent);background:var(--surface);line-height:1.6}
 .v5list li.has-ann .g{text-align:left}
+
+/* 原文与解读区分：原文＝宋体、米黄纸底、褐色边；提要和注解＝黑体、蓝色边 */
+.summary{font-family:var(--sans);font-size:15px;line-height:1.85;color:var(--ink);background:var(--ana-bg);border-left:3px solid var(--ana);border-radius:0 6px 6px 0;padding:10px 14px}
+.sum-label{color:var(--ana);font-family:var(--sans)}
+.sum-label::after{content:"　解读，非原文";font-weight:400;color:var(--muted);letter-spacing:0}
+.orig details{border-left:3px solid var(--orig-line);background:var(--orig-bg);border-radius:0 6px 6px 0;padding:10px 16px 4px}
+.orig summary{color:var(--orig-tag);font-weight:700;letter-spacing:.06em}
+.orig-text p{color:var(--orig-ink);font-size:16.5px}
+.quote{color:var(--orig-ink);border-left-color:var(--orig-line);background:var(--orig-bg);padding:8px 14px}
+.notes .note{border-top:3px solid var(--ana)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin:-8px 0 18px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px}
+.legend .lo{background:var(--orig-bg);border-left:3px solid var(--orig-line)}
+.legend .la{background:var(--ana-bg);border-left:3px solid var(--ana)}
+
+/* 分卷导航 */
+.volnav{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-size:13px;margin:0 6px;padding-left:10px;border-left:1px solid var(--line)}
+.sitenav .volnav a{min-width:28px;text-align:center;padding:4px 6px;font-family:var(--serif)}
+/* 首页五卷 */
+.volgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:8px 0 28px}
+.volcard{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:8px;padding:16px 14px 14px;text-decoration:none;color:var(--ink);min-height:190px}
+.volcard:hover{border-color:var(--accent)}
+.volcard.done,.volcard.part{border-top-color:var(--accent)}
+.volcard .vn{font-family:var(--serif);font-weight:900;font-size:24px;letter-spacing:.08em}
+.volcard .vy{font-family:var(--serif);color:var(--muted);font-size:14px}
+.volcard .vp{font-size:13px;color:var(--ink);margin-top:6px;flex:1}
+.volcard .vc{font-size:12px;color:var(--muted)}
+.volcard .vs{font-size:12px;color:var(--accent)}
+.volcard.todo .vs{color:var(--muted)}
+@media (max-width:900px){.volgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 本卷脉络 */
+.overview{max-width:46em}
+.mailuo{list-style:none;margin:8px 0 18px;padding:0 0 0 18px;border-left:2px solid var(--accent-soft);display:grid;gap:14px}
+.mailuo li{position:relative}
+.mailuo li::before{content:"";position:absolute;left:-25px;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.mailuo b{display:block;font-family:var(--serif);font-size:16px}
+.mailuo span{display:block;color:var(--ink);font-size:14.5px;line-height:1.85}
+.mailuo-h{font-family:var(--serif);font-size:17px;margin:20px 0 6px}
+.mailuo-threads{margin:0;padding-left:1.2em;display:grid;gap:6px;font-size:14.5px}

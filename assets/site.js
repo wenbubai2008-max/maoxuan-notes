@@ -86,17 +86,17 @@
       var html = sec.map(function(p){ return '<p>'+esc(p)+'</p>'; }).join('');
       var short = sec.join('').length < 2500;
       var col = box.parentNode, summ = col.querySelector('.summary'), quote = col.querySelector('.quote');
-      var label = document.createElement('div'); label.className = 'sum-label';
+      var label = col.querySelector('.sum-label') || document.createElement('div'); label.className = 'sum-label';
       if(short){
         box.innerHTML = '<details open><summary>原文 · '+sec.length+' 段</summary><div class="orig-text">'+html+'</div></details>';
-        col.insertBefore(box, quote || summ);
+        col.insertBefore(box, quote || col.querySelector('.sum-label') || summ);
         if(quote) quote.hidden = true;
         label.textContent = '提要';
       }else{
         box.innerHTML = '<details><summary>原文 · '+sec.length+' 段（较长，点开阅读）</summary><div class="orig-text">'+html+'</div></details>';
         label.textContent = '提要 · 导读';
       }
-      if(summ && !col.querySelector('.sum-label')) col.insertBefore(label, summ);
+      if(summ && !label.parentNode) col.insertBefore(label, summ);
     });
   }
 

@@ -12,6 +12,9 @@ def main():
     by_title = {a['title']: a['no'] for a in B.load_articles('1')}
     by_title5 = {a['title']: a['no'] for a in B.load_articles('5')}
     n5 = 0
+    # 一至四卷按各卷第一篇切分
+    firsts = {'反对日本进攻的方针、办法和前途': 2, '《农村调查》的序言和跋': 3, '抗日战争胜利后的时局和我们的方针': 4}
+    volno, seqs = 1, {}
     outdir = os.path.join(ROOT, 'build', 'site-text')
     os.makedirs(outdir, exist_ok=True)
     manifest = []
@@ -22,7 +25,11 @@ def main():
         rec = {'file': f, 'vol': x['vol'], 'title': x['title'], 'date': x['date'], 'v1': v1,
                'chars': len(''.join(x['paras']))}
         if x['vol'] == '5':
-            n5 += 1; rec['v5no'] = n5; rec['v5'] = v5
+            n5 += 1; rec['v5no'] = n5; rec['v5'] = v5; rec['volno'] = 5; rec['seq'] = n5
+        else:
+            volno = firsts.get(x['title'], volno)
+            seqs[volno] = seqs.get(volno, 0) + 1
+            rec['volno'] = volno; rec['seq'] = seqs[volno]
         manifest.append(rec)
         root = '../'
         back = (f'<a class="btn-link" href="{root}v1/{v1:02d}.html">← 看这篇的注解和深读</a>' if v1 else
@@ -34,7 +41,7 @@ def main():
         prev_ = f'<a href="{i-1:03d}.html">← 上一篇</a>' if i > 1 else '<span></span>'
         next_ = f'<a href="{i+1:03d}.html">下一篇 →</a>' if i < len(data) else '<span></span>'
         page = (B.head(f'{x["title"]} · 原文 · 毛选 · 读书', root) + B.topbar(root, 'text') +
-                f'<div class="shell wide"><main><div class="eyebrow">原文 · {"第五卷" if x["vol"]=="5" else "一至四卷"}</div>'
+                f'<div class="shell wide"><main><div class="eyebrow">原文 · 第{"一二三四五"[rec["volno"] - 1]}卷 · 第 {rec["seq"]} 篇</div>'
                 f'<h1>{B.esc(x["title"])}</h1><p class="date">（{B.esc(x["date"])}）</p>{back}{head}'
                 f'<article class="srctext">{paras}</article>{notes_html}'
                 f'<div class="pager">{prev_}<a href="index.html">原文目录</a>{next_}</div></main></div>\n' + B.foot(root))

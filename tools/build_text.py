@@ -147,13 +147,101 @@ def split_vol5(V):
         out.append({'vol': '5', 'title': t, 'date': d, 'headnote': head, 'paras': paras, 'notes': notes})
     return out
 
+def split_vol24(path):
+    """第二至四卷：按目录页码切分，标题和日期取正文首页，页中间开始的短文另行切出。"""
+    txt=subprocess.run(['pdftotext', '-layout', path, '-'], capture_output=True, text=True, check=True).stdout; pages=txt.split('\f')
+    num=[None]*len(pages)
+    for i,pg in enumerate(pages):
+        ls=[l.strip() for l in pg.split('\n') if l.strip()]
+        for l in ls[:2]+ls[-2:]:
+            m=re.match(r'^(\d{1,4})\s+毛泽东选集',l) or re.search(r'\S\s+(\d{1,4})$',l) or re.fullmatch(r'(\d{1,4})',l)
+            if m: num[i]=int(m.group(1)); break
+    # 页码：用相邻页的“PDF 页序 - 书页码”中位数纠正个别误读
+    cand = [(i, n) for i, n in enumerate(num) if n is not None and i > 40]
+    num = [None] * len(pages)
+    for i in range(len(pages)):
+        near = sorted(ii - n for ii, n in cand if abs(ii - i) <= 10)
+        if near:
+            num[i] = i - near[len(near) // 2]
+    b2p = {}
+    for i, n in enumerate(num):
+        if n is not None and n not in b2p and i > 40:
+            b2p[n] = i
+    DATE=re.compile(r'^\s*[（(]\s*(一九[〇○零0-9一二三四五六七八九十 ]{2,6}年[^）)]{0,40})[）)]?\s*$')
+    SKIP = ('跋', '结论', '引言', '序', '序言')
+    def starts_here(pg):
+        ne = [l for l in pg.split('\n') if l.strip()]
+        for j, l in enumerate(ne[:7]):
+            pl = ne[j-1] if j >= 1 else ''
+            if (DATE.match(l) and len(l.strip()) <= 30 and j >= 1 and len(pl) - len(pl.lstrip()) >= 2
+                    and len(pl.strip()) <= 34 and not re.search(r'[。，；：]$', pl.strip())):
+                t = re.sub(r'[*＊⑴-⒇\s]', '', pl)
+                return not (t in SKIP or t.startswith('发言人') or t.startswith('中国共产党中央革命军事委员会'))
+        return False
+    L=txt.split('\n'); endt=next(i for i,l in enumerate(L) if '唯心历史观的破产' in l)
+    tocs = sorted({int(m.group(1)) for l in L[20:endt+1] for m in [re.search(r'\.{3,}\s*(\d+)\s*[－-]\s*\d*\s*$',l.strip())] if m})
+    startp = set()
+    for sbk in tocs:
+        if sbk < 315 or sbk not in b2p: continue
+        p0 = b2p[sbk]
+        for d in (0, 1, -1, 2, -2, 3, -3):
+            q = p0 + d
+            if 0 <= q < len(pages) and any(DATE.match(l) for l in [x for x in pages[q].split('\n') if x.strip()][:12]):
+                startp.add(q); break
+    for i, pg in enumerate(pages):
+        if num[i] is not None and num[i] >= 315 and starts_here(pg):
+            startp.add(i)
+    startp = sorted(startp)
+    endp = max(i for i in range(b2p[1454], b2p[1454] + 3) if num[i] == 1454)
+    startp = [p for p in startp if p <= endp]
+    out=[]
+    for k,p0 in enumerate(startp):
+        s = num[p0]
+        p1 = startp[k+1]-1 if k+1 < len(startp) else endp
+        lines=[]
+        for p in range(p0,p1+1): lines+=pages[p].split('\n')
+        # title lines before the first date line, within first 15 non-empty lines
+        ne=[(i,l) for i,l in enumerate(lines) if l.strip()]
+        di=None
+        for j,(i,l) in enumerate(ne[:15]):
+            if DATE.match(l): di=j; break
+        if di is None: continue
+        tl=[l.strip() for _,l in ne[:di] if not re.fullmatch(r'\d+',l.strip()) and '毛泽东选集' not in l.replace(' ','')]
+        title=re.sub(r'[*＊⑴-⒇]','',''.join(tl).replace(' ',''))
+        title=re.sub(r'\d+.*$','',title) or title
+        title=title.replace('论人民民主专政纪念中国共产党二十八周年','论人民民主专政')
+        if title.startswith('附录'): title='附录：关于若干历史问题的决议'
+        d=DATE.match(ne[di][1]).group(1).replace(' ','')
+        # 页中间开始的短文：标题行（居中、短）后紧跟日期行
+        cuts=[(ne[di][0],title,d)]
+        for j in range(di+3,len(ne)):
+            i,l=ne[j]
+            if DATE.match(l) and len(l.strip())<=30:
+                k=j-1; tl2=[]
+                while k>j-4 and k>0:
+                    pl=ne[k][1]; ps=pl.strip()
+                    if len(pl)-len(pl.lstrip())>=4 and len(ps)<=34 and not re.search(r'[。，；：]$',ps) and not re.fullmatch(r'[\d\s]+',ps) and '毛泽东选集' not in ps.replace(' ','') and not re.search(r'\s\d{2,4}$',ps):
+                        tl2.insert(0,ps); k-=1
+                    else: break
+                if tl2 and not any(kw in title for kw in ('命令和谈话', '两个文件', '两个电报', '序言和跋')) and re.sub(r'[*＊⑴-⒇\s]','',''.join(tl2)) not in ('跋','结论','引言','序','序言'):
+                    t2=re.sub(r'[*＊⑴-⒇\s]','',''.join(tl2))
+                    cuts.append((i,t2,DATE.match(l).group(1).replace(' ',''),ne[k+1][0]))
+        for c,(i,t,dd,*rest) in enumerate(cuts):
+            stop=cuts[c+1][3] if c+1<len(cuts) else len(lines)
+            head,paras,notes=parse_article(lines, i+1, stop, t)
+            out.append({'vol':'1-4','title':t,'date':dd,'headnote':head,'paras':paras,'notes':notes,'page':s})
+
+    return out
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--vol14', required=True)
     ap.add_argument('--vol5', required=True)
     ap.add_argument('--out', default='build/text.json')
     a = ap.parse_args()
-    data = split_vol14(layout_lines(a.vol14)) + split_vol5(layout_lines(a.vol5))
+    v14 = split_vol14(layout_lines(a.vol14))
+    k = next(i for i, x in enumerate(v14) if x['title'] == '矛盾论') + 1   # 第一卷沿用原方法（段落编号已用于对照）
+    data = v14[:k] + split_vol24(a.vol14) + split_vol5(layout_lines(a.vol5))
     os.makedirs(os.path.dirname(a.out) or '.', exist_ok=True)
     json.dump(data, open(a.out, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(f'{len(data)} 篇，{sum(len("".join(x["paras"])) for x in data)} 字 → {a.out}')

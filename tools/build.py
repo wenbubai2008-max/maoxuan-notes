@@ -27,7 +27,10 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
 def esc(s):
     return html.escape(s, quote=True)
 
-VOL_NAME = {'1': '第一卷', '5': '第五卷'}
+VOL_NAME = {'1': '第一卷', '2': '第二卷', '3': '第三卷', '4': '第四卷', '5': '第五卷'}
+VOL_INFO = {1: ('1925—1937', '第一、二次国内革命战争时期'), 2: ('1937—1941', '抗日战争时期（上）'),
+            3: ('1941—1945', '抗日战争时期（下）'), 4: ('1945—1949', '第三次国内革命战争时期'),
+            5: ('1949—1957', '社会主义革命和建设时期')}
 
 def load_articles(vol='1'):
     arts = []
@@ -67,11 +70,12 @@ def topbar(root, current):
     if current == 'shelf':
         return (f'<header class="topbar"><a class="brand" href="{root}index.html">读书'
                 f'<small>读过的书，和读书时想清楚的事</small></a></header>\n')
-    items = [('home', '本书首页', f'{root}maoxuan.html'), ('v1', '第一卷', f'{root}v1/01.html'),
-             ('v5', '第五卷', f'{root}v5/index.html'),
-             ('method', '总论：思维方法', f'{root}method.html'), ('text', '原文', f'{root}text/index.html')]
-    links = ''.join(
-        f'<a href="{u}"{" aria-current=\"page\"" if k == current else ""}>{t}</a>' for k, t, u in items)
+    cur = lambda k: ' aria-current="page"' if k == current else ''
+    vols = ''.join(f'<a href="{root}v{n}/index.html"{cur("v" + str(n))} title="第{c}卷">{c}</a>' for n, c in zip(range(1, 6), '一二三四五'))
+    links = (f'<a href="{root}maoxuan.html"{cur("home")}>本书首页</a>'
+             f'<span class="volnav" aria-label="分卷">卷{vols}</span>'
+             f'<a href="{root}method.html"{cur("method")}>总论：思维方法</a>'
+             f'<a href="{root}text/index.html"{cur("text")}>原文</a>')
     return (f'<header class="topbar"><a class="brand" href="{root}index.html">读书</a>'
             f'<span class="crumb">›</span><a class="book" href="{root}maoxuan.html">毛泽东选集</a>'
             f'<nav class="sitenav" aria-label="本书栏目">{links}</nav></header>\n')
@@ -94,9 +98,9 @@ def toc(arts, root, cur_no):
         on = ' class="on"' if a['no'] == cur_no else ''
         out.append(f'<li{on}><a href="{root}v{vol}/{a["no"]:02d}.html"><span class="n">{a["no"]}</span>{esc(a["title"])}</a></li>')
     if vol == '5':
-        out.append(f'</ol><div class="more">第五卷共 70 篇，这里先做 {len(arts)} 篇重点篇，序号是原书目录里的篇序。<a href="{root}v5/index.html">第五卷全部篇目 →</a></div></nav>')
+        out.append(f'</ol><div class="more">第五卷共 70 篇，这里先做 {len(arts)} 篇重点篇，序号是原书目录里的篇序。<a href="{root}v5/index.html">本卷脉络和全部篇目 →</a></div></nav>')
     else:
-        out.append('</ol><div class="more">按第一版（1951 年起）编排，共 17 篇。第二版在《星星之火，可以燎原》后加入《反对本本主义》。</div></nav>')
+        out.append(f'</ol><div class="more">按第一版（1951 年起）编排，共 17 篇。第二版在《星星之火，可以燎原》后加入《反对本本主义》。<a href="{root}v1/index.html">本卷脉络 →</a></div></nav>')
     return '\n'.join(out)
 
 def wrap_terms(text, notes, start):
@@ -127,7 +131,7 @@ def render_sections(a, root='../'):
         else:
             slot_html = '<span class="slot">原文 · 暂未收入</span>'
         parts.append(f'<div class="sec"><div><h3><span class="sn">§{si}</span>{esc(s["h"])}</h3>'
-                     f'{slot_html}{q}<p class="summary">{summ}</p><div class="orig" data-sec="{si - 1}"></div></div>'
+                     f'{slot_html}{q}<div class="sum-label">提要</div><p class="summary">{summ}</p><div class="orig" data-sec="{si - 1}"></div></div>'
                      f'<ol class="notes">{"".join(lis)}</ol></div>')
     return '\n'.join(parts), num - 1
 
@@ -189,6 +193,7 @@ def article_page(a, arts):
             '<label class="rem"><input type="checkbox" id="orig-rem" checked> 在这台设备上记住</label><p class="err" id="orig-err" hidden>密码不对，请再试一次。</p></form>'
             + (f'<div class="notice"><div><b>原文。</b><a href="{tl}">阅读这篇的原文 →</a>{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>' if tl else '<div class="notice"><div>下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>') +
             f'<p class="mx-notes-entry"><a href="#" id="mx-notes-btn">写笔记</a></p>'
+            '<div class="legend"><span><i class="lo"></i>原文（宋体，米黄底）</span><span><i class="la"></i>提要和注解（黑体，蓝线，由 Claude 撰写）</span></div>'
             f'{secs}</section>\n{read}\n{bg}\n{extra_html}'
             '<dialog id="mx-token" class="mx-dlg"><h3>GitHub 令牌</h3>'
             '<p>笔记会直接保存到你的 GitHub 仓库。粘贴一个只允许修改本仓库内容的令牌，它只保存在这台设备的浏览器里。</p>'
@@ -205,46 +210,87 @@ def biglist(arts):
 
 def home_page(arts, arts5):
     root = ''
+    items = load_text_index()
+    cards = []
+    for n in range(1, 6):
+        years, period = VOL_INFO[n]
+        total = len([t for t in items if t.get('volno') == n])
+        done = {1: len(arts), 5: len(arts5)}.get(n, 0)
+        if done and done >= total:
+            st, cls = f'{done} 篇全部注解', 'done'
+        elif done:
+            st, cls = f'重点 {done} 篇已注解 · 其余可读原文', 'part'
+        else:
+            st, cls = '原文可读 · 注解待做', 'todo'
+        cards.append(f'<a class="volcard {cls}" href="v{n}/index.html"><span class="vn">第{"一二三四五"[n-1]}卷</span>'
+                     f'<span class="vy">{years}</span><span class="vp">{period}</span>'
+                     f'<span class="vc">共 {total} 篇</span><span class="vs">{st}</span></a>')
     body = f'''<div class="shell wide"><main>
 <div class="eyebrow"><a href="index.html">书架</a> › 毛泽东选集</div>
 <h1>《毛泽东选集》逐篇注解与深读</h1>
 <p class="lede">每篇文章做三件事：讲清楚写作背景和名词，把文章的推理过程拆开，再看它的方法今天还能怎么用、局限在哪里。观点会过时，思考的方法可以带走。</p>
+<div class="volgrid">{"".join(cards)}</div>
 <div class="cards">
   <a class="card" href="method.html"><b>总论：思维方法</b><span>从五卷里提炼的 12 条底层逻辑，每条都标出处、用法和失灵条件。</span></a>
   <a class="card" href="v1/01.html"><b>样章：中国社会各阶级的分析</b><span>最完整的一篇，含深读、版本变化和管理视角。</span></a>
-  <a class="card" href="v5/index.html"><b>第五卷：1949—1957</b><span>执政以后的文章。先做 {len(arts5)} 篇重点篇，其余 {70 - len(arts5)} 篇列出目录、可读原文。</span></a>
+  <a class="card" href="text/index.html"><b>原文目录</b><span>五卷全部 {len(items)} 篇原文{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。</span></a>
 </div>
-<h2 class="vh">第一卷 <small>1925—1937 · {len(arts)} 篇</small></h2>
-<ol class="biglist">{biglist(arts)}</ol>
-<h2 class="vh">第五卷 <small>1949—1957 · 重点 {len(arts5)} 篇 · <a href="v5/index.html">全部 70 篇目录</a></small></h2>
-<ol class="biglist">{biglist(arts5)}</ol>
-<h2 class="vh">第二至四卷 <small>待做</small></h2>
-<p class="note-s">原文已经可以在“原文”栏目里读。</p>
 </main></div>
 
 '''
     return head('毛泽东选集 · 读书', root) + topbar(root, 'home') + body + foot(root)
 
-def v5_index_page(arts5):
+def resolve_links(html_, root, arts_by):
+    """[[v1-NN]] → 注解页；[[t:标题]] → 原文页。"""
+    items = load_text_index()
+    def v(m):
+        a = arts_by.get((m.group(1), int(m.group(2))))
+        return f'<a href="{root}v{m.group(1)}/{int(m.group(2)):02d}.html">《{esc(a["title"])}》</a>' if a else m.group(0)
+    def t(m):
+        title = m.group(1)
+        it = next((x for x in items if x['title'] == title), None)
+        if not it:
+            return f'《{esc(title)}》'
+        if it.get('v1'):
+            return f'<a href="{root}v1/{it["v1"]:02d}.html">《{esc(title)}》</a>'
+        if it.get('v5'):
+            return f'<a href="{root}v5/{it["v5"]:02d}.html">《{esc(title)}》</a>'
+        return f'<a href="{root}text/{it["file"]}">《{esc(title)}》</a>'
+    html_ = re.sub(r'\[\[v([1-5])-(\d\d)\]\]', v, html_)
+    return re.sub(r'\[\[t:([^\]]+)\]\]', t, html_)
+
+def vol_index_page(n, arts_by):
     root = '../'
-    ann = {a['no']: a for a in arts5}
-    items = [t for t in load_text_index() if t['vol'] == '5']
-    intro = open(C('vol5_intro.html'), encoding='utf-8').read() if os.path.exists(C('vol5_intro.html')) else ''
+    vol = str(n); cn = '一二三四五'[n-1]
+    years, period = VOL_INFO[n]
+    items = [t for t in load_text_index() if t.get('volno') == n]
+    intro = open(C(f'vol{n}_intro.html'), encoding='utf-8').read() if os.path.exists(C(f'vol{n}_intro.html')) else ''
+    ov = C('overview', f'vol{n}.html')
+    overview = resolve_links(open(ov, encoding='utf-8').read(), root, arts_by) if os.path.exists(ov) else ''
     rows = []
+    nann = 0
     for t in items:
-        no = t['v5no']; a = ann.get(no)
+        no = t.get('v' + vol) if n in (1, 5) else None
+        a = arts_by.get((vol, no)) if no else None
+        seq = no if n == 5 else (a['no'] if a else t['seq'])
         if a:
-            rows.append(f'<li class="has-ann"><a href="{no:02d}.html"><span class="n">{no}</span><span class="t">{esc(t["title"])}'
+            nann += 1
+            rows.append(f'<li class="has-ann"><a href="{no:02d}.html"><span class="n">{seq}</span><span class="t">{esc(t["title"])}'
                         f'<span class="d">{esc(t["date"])}</span></span><span class="g">{esc(a["gist"])}</span></a>'
                         f'<a class="tag-note" href="{root}text/{t["file"]}">原文</a></li>')
         else:
-            rows.append(f'<li><a href="{root}text/{t["file"]}"><span class="n">{no}</span><span class="t">{esc(t["title"])}'
+            rows.append(f'<li><a href="{root}text/{t["file"]}"><span class="n">{seq}</span><span class="t">{esc(t["title"])}'
                         f'<span class="d">{esc(t["date"])}</span></span><span class="g">原文 · 约 {t["chars"]//100/10:.1f} 千字</span></a></li>')
-    body = (f'<div class="shell wide"><main><div class="eyebrow"><a href="{root}maoxuan.html">毛泽东选集</a> › 第五卷</div>'
-            f'<h1>第五卷 <small class="h1s">1949—1957</small></h1>{intro}'
-            f'<p class="note-s">共 {len(items)} 篇。带摘要的 {len(arts5)} 篇已做注解和分析，点进去看；其余直接打开原文{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。</p>'
+    lock = "（2026 年 12 月 31 日前需要密码）" if text_locked() else ""
+    status = (f'共 {len(items)} 篇，全部已做注解和分析。' if nann == len(items) else
+              f'共 {len(items)} 篇。带摘要的 {nann} 篇已做注解和分析，点进去看；其余直接打开原文{lock}。' if nann else
+              f'共 {len(items)} 篇。这一卷的注解还没有做，下面每篇都可以直接打开原文{lock}。')
+    body = (f'<div class="shell wide"><main><div class="eyebrow"><a href="{root}maoxuan.html">毛泽东选集</a> › 第{cn}卷</div>'
+            f'<h1>第{cn}卷 <small class="h1s">{years} · {period}</small></h1>{intro}'
+            f'<h2 class="vh">本卷脉络</h2><div class="overview">{overview}</div>'
+            f'<h2 class="vh">全部篇目</h2><p class="note-s">{status}</p>'
             f'<ol class="biglist textlist v5list">{"".join(rows)}</ol></main></div>\n')
-    return head('第五卷 · 毛选 · 读书', root) + topbar(root, 'v5') + body + foot(root)
+    return head(f'第{cn}卷 · 毛选 · 读书', root) + topbar(root, f'v{n}') + body + foot(root)
 
 def shelf_page():
     books = json.load(open(C('books.json'), encoding='utf-8'))
@@ -277,15 +323,15 @@ def text_index_page():
     items = load_text_index()
     if not items:
         return None
-    groups = [('一至四卷', '1925—1949', [t for t in items if t['vol'] != '5']), ('第五卷', '1949—1957', [t for t in items if t['vol'] == '5'])]
+    groups = [(f'第{"一二三四五"[n-1]}卷', VOL_INFO[n][0], [t for t in items if t.get('volno') == n]) for n in range(1, 6)]
     body = ['<div class="shell wide"><main><div class="eyebrow">原文</div><h1>《毛泽东选集》原文</h1>',
             ('<p class="lede" id="pw-note">2026 年 12 月 31 日前，原文仅供个人阅读，打开时需要输入密码，勾选“在这台设备上记住密码”后，同一台设备只需输入一次。2027 年 1 月 1 日起自动公开，不再需要密码。</p>' if text_locked() else ''),
-            f'<p class="note-s">共 {len(items)} 篇。由原书 PDF 自动提取，个别篇目的分段可能不准确；一至四卷另有几篇因排版问题暂未收入。标有“注解”的篇目可以对照阅读。</p>']
+            f'<p class="note-s">共 {len(items)} 篇。由原书 PDF 自动提取，个别篇目的分段可能不准确；编号是各卷内的篇序。标有“注解”的篇目可以对照阅读。</p>']
     for name, years, lst in groups:
         body.append(f'<h2 class="vh">{name} <small>{years} · {len(lst)} 篇</small></h2><ol class="biglist textlist">')
         for t in lst:
             tag = ''.join(f'<a class="tag-note" href="{root}v{v}/{t["v" + v]:02d}.html">注解</a>' for v in ('1', '5') if t.get('v' + v))
-            body.append(f'<li><a href="{t["file"]}"><span class="n">{int(t["file"][:3])}</span><span class="t">{esc(t["title"])}'
+            body.append(f'<li><a href="{t["file"]}"><span class="n">{t.get("seq", int(t["file"][:3]))}</span><span class="t">{esc(t["title"])}'
                         f'<span class="d">{esc(t["date"])}</span></span><span class="g">约 {t["chars"]//100/10:.1f} 千字</span></a>{tag}</li>')
         body.append('</ol>')
     body.append('</main></div>')
@@ -302,8 +348,10 @@ def main():
         os.makedirs(os.path.join(ROOT, f'v{vol}'), exist_ok=True)
         for a in lst:
             open(os.path.join(ROOT, f'v{vol}', f'{a["no"]:02d}.html'), 'w', encoding='utf-8').write(article_page(a, lst))
-    if arts5:
-        open(os.path.join(ROOT, 'v5', 'index.html'), 'w', encoding='utf-8').write(v5_index_page(arts5))
+    arts_by = {(a['vol'], a['no']): a for a in arts + arts5}
+    for n in range(1, 6):
+        os.makedirs(os.path.join(ROOT, f'v{n}'), exist_ok=True)
+        open(os.path.join(ROOT, f'v{n}', 'index.html'), 'w', encoding='utf-8').write(vol_index_page(n, arts_by))
     open(os.path.join(ROOT, 'maoxuan.html'), 'w', encoding='utf-8').write(home_page(arts, arts5))
     open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8').write(shelf_page())
     open(os.path.join(ROOT, 'method.html'), 'w', encoding='utf-8').write(method_page(arts))
