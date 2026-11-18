@@ -5,7 +5,7 @@
 <title>水浒传 · 阅读</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/shuihu-more.css?v=1">
+<link rel="stylesheet" href="assets/shuihu-more.css?v=2">
 </head>
 <body class="sh-other">
 <header class="jin-bar"><div class="jin-bar-inner">
@@ -16,7 +16,7 @@
 <header class="jin-read-heading">
 <small id="chapter-label">第1回</small>
 <h1 id="chapter-title">正在读取章节</h1>
-<p class="sh-reader-legend">黑色为原文，<strong>彩色为直接可见的本站读注</strong>。未核对的古人旧评不冒充原批。</p>
+<p class="sh-reader-legend">黑色为简体正文；<strong>彩色为紧随正文的点评</strong>。底本附评与本站分析分别署名，不用点击展开。</p>
 </header>
 <div class="jin-controls">
 <span id="load-status" role="status">正在读取简体原文……</span>
@@ -32,6 +32,7 @@
 </main>
 <script src="assets/shuihu-text-clean.js?v=1"></script>
 <script src="assets/shuihu-more-data.js"></script>
+<script src="assets/shuihu-guides.js?v=1"></script>
 <script>
 (function(){
  "use strict";
@@ -66,44 +67,70 @@
  fontSet();
  function node(type,cls,content){const el=document.createElement(type);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el}
  function render(data,fromLive=false){
-   if(!Array.isArray(data.paragraphs)||data.paragraphs.length===0)throw new Error("未获取完整的本回正文");
+   if(!Array.isArray(data.paragraphs)||!data.paragraphs.length)throw new Error("本回正文未载入");
    const target=$("reading-content"),frag=document.createDocumentFragment();
-   const claimedOld=Array.isArray(data.source_notes)?data.source_notes:[];
-   const notes=(conf.notes||{})[n]||[];
-   const seen=new Set();
+   const all=(window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs).filter(p=>typeof p==="string"&&p.trim());
+   const originalNotes=Array.isArray(data.source_notes)?data.source_notes.filter(x=>x.verified&&x.text):[];
    const byIndex=new Map();
-   for(const entry of claimedOld){
-     // Only source-verified original commentary is allowed here, never inferred.
-     if(!entry.verified||typeof entry.text!=="string")continue;
-     const idx=Number(entry.paragraph_index);
-     if(!Number.isInteger(idx)||idx<0||idx>=data.paragraphs.length)continue;
+   originalNotes.forEach(note=>{
+     const idx=Number(note.paragraph_index);
+     if(!Number.isInteger(idx)||idx<0||idx>=all.length)return;
      if(!byIndex.has(idx))byIndex.set(idx,[]);
-     byIndex.get(idx).push({text:entry.text,kind:entry.kind||"原批",source:true});
+     byIndex.get(idx).push({name:note.kind||"底本原评",text:String(note.text)});
+   });
+   const oldReview=/^(?:(?:回末批|回前批|篇末评)\s*)?(?:(?:李(?:载贽|卓吾|秃翁|和尚|秃老|秃翁先生)|卓老|秃翁|李贽|李卓吾先生|李和尚|李秃翁先生))\s*(?:曰|评|批)\s*[:：]/;
+   const oldHeading=/^(?:回末批|回前批|篇末评)\s*[\r\n]+/;
+   const chapterTitle=titleMap.get(n)||data.title||$("chapter-title").textContent;
+   const authored=window.SHUIHU_GUIDES?.get(ed,n,chapterTitle);
+   const saved=(conf.notes||{})[n]||[];
+   let guideAt=Math.min(Math.max(2,Math.round(all.length*.16)),Math.max(0,all.length-1));
+   let oldCount=0,editorCount=0,guideAdded=false;
+   const seen=new Set();
+   function editorial(text,title){
+     const box=node("aside","sh-edition-note");
+     box.append(node("strong","",title||"本站评析"),document.createTextNode(String(text).replace(/^【本站读注】/,"").trim()));
+     editorCount++;return box;
    }
-   const cleanParagraphs=(window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs).filter(p=>typeof p==="string"&&p.trim());
-   for(let i=0;i<cleanParagraphs.length;i++){
-     const raw=cleanParagraphs[i];
-     const p=node("p","jin-text",raw);frag.appendChild(p);
-     // Add notes immediately after their relevant passage, always visible.
-     for(let j=0;j<notes.length;j++){
-       const nt=notes[j];
-       if(seen.has(j)||!nt.text)continue;
-       const anchor=String(nt.anchor||"");
-       const match=anchor&&raw.includes(anchor);
-       if(match || (i===Math.min(1,cleanParagraphs.length-1) && !anchor)){
-         const box=node("aside","sh-edition-note");
-         box.append(node("strong","","本站读注"),document.createTextNode(nt.text.replace(/^【本站读注】/,"")));
-         frag.appendChild(box);seen.add(j);
+   function oldComment(raw,name){
+     const box=node("aside","sh-source-comment");
+     const heading=node("strong","",name||"底本附评 · 评者署名待考");
+     const text=String(raw).replace(oldHeading,"").trim();
+     box.append(heading,document.createTextNode(text));
+     oldCount++;return box;
+   }
+   for(let i=0;i<all.length;i++){
+     const raw=all[i];
+     // A large proportion of the Rongyutang transcription preserves an attached
+     // “李卓吾曰 / 卓老曰 / 李秃翁曰” at the end of the chapter. Show it as
+     // historical text, not as prose and never silently assign it to Li Zhi.
+     if(ed==="100" && i>=Math.floor(all.length*.45) &&
+        (oldReview.test(raw.trim())||(oldHeading.test(raw)&&/(?:曰|评|批)[:：]/.test(raw)))){
+       frag.appendChild(oldComment(raw,"容与堂底本附评 · 原署名归属待考"));
+       continue;
+     }
+     frag.appendChild(node("p","jin-text",raw));
+     for(const note of byIndex.get(i)||[]){
+       frag.appendChild(oldComment(note.text,note.name+" · 经核实的原批"));
+     }
+     // Commentary is always visible, immediately following the linked paragraph.
+     saved.forEach((note,k)=>{
+       if(seen.has(k)||!note.text)return;
+       const anchor=String(note.anchor||"").trim();
+       if((anchor && raw.includes(anchor))||(!anchor&&i===guideAt)||
+          (i===all.length-1 && !seen.has(k))){
+         frag.appendChild(editorial(note.text,"本站评析"));
+         seen.add(k);
        }
-     }
-     for(const item of byIndex.get(i)||[]){
-       const box=node("aside","sh-source-comment");
-       box.append(node("strong","",item.kind+" · 原批"),document.createTextNode(item.text));
-       frag.appendChild(box);
+     });
+     if(authored && !guideAdded && i===guideAt){
+       frag.appendChild(editorial(authored.text,authored.kind));
+       guideAdded=true;
      }
    }
+   if(authored&&!guideAdded)frag.appendChild(editorial(authored.text,authored.kind));
    target.replaceChildren(frag);target.setAttribute("aria-busy","false");
-   $("load-status").textContent=fromLive?"维基文库实时读取 · 繁简字形请核对":label+" · 简体正文 "+(data.characters||"")+" 字";
+   const sourceInfo=oldCount?" · 底本附评 "+oldCount+" 则":"";
+   $("load-status").textContent=label+" · 正文"+(data.characters||"")+"字"+sourceInfo+" · 本站点评 "+editorCount+" 则"+(fromLive?"（备用来源）":"");
    if(data.source)$("source-link").href=data.source;
  }
  async function load(){
