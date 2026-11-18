@@ -1,6 +1,6 @@
 # 读书 · 毛泽东选集
 
-《毛泽东选集》五卷逐篇注解与深读。网站：https://wenbubai2008-max.github.io/maoxuan-notes/
+《毛泽东选集》五卷逐篇注解与深读。网站：https://wenbubai2008-max.github.io/reading/
 
 ## 结构
 
