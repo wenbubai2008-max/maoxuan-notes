@@ -6,7 +6,8 @@
 
 ```
 index.html            首页（由 build.py 生成）
-compare.html          原文对照阅读（仅本地选取 PDF，不托管原文）
+compare.html          原文对照阅读（第一卷原文在线；也可选本地 PDF）
+originals/v1/NN.html  第一卷各篇原文文字稿（由1967年PDF提取）
 method.html           总论：思维方法（生成）
 v1/NN.html            第一卷各篇（生成）
 assets/site.css/.js   共享样式和脚本
@@ -35,9 +36,9 @@ tools/split_corpus.py 把本地 PDF 切成单篇 JSON
 
 ## 原文
 
-公开站点已提供 `compare.html`：选择本地 1967 年一卷本 PDF 后，可按第一卷 17 篇直接跳到对应原文页，右侧显示本站逐篇分析。1977 年第五卷可按书内印页翻阅；逐篇分析尚待制作。PDF 只在浏览器本地加载，不进入仓库或服务器，刷新后需要重新选择文件。
+公开站点已提供 `compare.html`：第一卷17篇的1967年版文字原文已发布在 `originals/v1/`，可直接左原文右注解阅读；如需核对扫描影印版，可选择本地 PDF，文件仍只在浏览器本地加载。1977年第五卷目前仍须选择本地 PDF 阅读，逐篇分析尚待制作。
 
-原文 PDF 放在 `source/`，切分结果在 `build/`，都不进仓库。正文计划在 **2027 年 1 月 1 日** 之后导入网站。
+原文 PDF 放在 `source/`，切分结果在 `build/`，都不进仓库。第一卷原文文字已由上传的1967年一卷本提取并发布，存在自动提取误差；引用前应核对PDF扫描页。
 
 ```bash
 python3 tools/split_corpus.py --vol14 source/一卷本.pdf --vol5 source/第五卷.pdf --out build/corpus.json
