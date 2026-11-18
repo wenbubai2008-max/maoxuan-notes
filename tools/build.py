@@ -74,8 +74,7 @@ def topbar(root, current):
     vols = ''.join(f'<a href="{root}v{n}/index.html"{cur("v" + str(n))} title="第{c}卷">{c}</a>' for n, c in zip(range(1, 6), '一二三四五'))
     links = (f'<a href="{root}maoxuan.html"{cur("home")}>本书首页</a>'
              f'<span class="volnav" aria-label="分卷">卷{vols}</span>'
-             f'<a href="{root}method.html"{cur("method")}>总论：思维方法</a>'
-             f'<a href="{root}text/index.html"{cur("text")}>原文</a>')
+             f'<a href="{root}method.html"{cur("method")}>总论：思维方法</a>')
     return (f'<header class="topbar"><a class="brand" href="{root}index.html">读书</a>'
             f'<span class="crumb">›</span><a class="book" href="{root}maoxuan.html">毛泽东选集</a>'
             f'<nav class="sitenav" aria-label="本书栏目">{links}</nav></header>\n')
@@ -98,7 +97,7 @@ def toc(arts, root, cur_no):
         on = ' class="on"' if a['no'] == cur_no else ''
         out.append(f'<li{on}><a href="{root}v{vol}/{a["no"]:02d}.html"><span class="n">{a["no"]}</span>{esc(a["title"])}</a></li>')
     if vol == '5':
-        out.append(f'</ol><div class="more">第五卷共 70 篇，这里先做 {len(arts)} 篇重点篇，序号是原书目录里的篇序。<a href="{root}v5/index.html">本卷脉络和全部篇目 →</a></div></nav>')
+        out.append(f'</ol><div class="more">第五卷共 70 篇，序号是原书目录里的篇序。<a href="{root}v5/index.html">本卷脉络 →</a> · <a href="{root}v5/tulong.html">“屠龙卷”专题 →</a></div></nav>')
     else:
         out.append(f'</ol><div class="more">按第一版（1951 年起）编排，共 17 篇。第二版在《星星之火，可以燎原》后加入《反对本本主义》。<a href="{root}v1/index.html">本卷脉络 →</a></div></nav>')
     return '\n'.join(out)

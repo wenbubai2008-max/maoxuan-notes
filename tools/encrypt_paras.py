@@ -64,7 +64,7 @@ def build_payload(vol, no, paras, ranges, heads):
         if nxt:
             seg[-1] = cut_tail(seg[-1], nxt)
         seg = [re.sub(r'按语（选辑）（[^）]*）$', '', x) for x in seg]
-        out.append([x for x in seg if x.strip() and not HEADING.match(x.strip())])
+        out.append([x for x in seg if x.strip() and not HEADING.match(x.strip()) and not x.lstrip('（(').startswith('《毛泽东选集》第五卷')])
     return {f'v{vol}': no, 'sections': out}
 
 def main():

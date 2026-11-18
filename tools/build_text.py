@@ -63,11 +63,14 @@ def parse_article(lines, start, end, title, head_flush=False):
         if s.startswith('*'):
             mode = 'head'; head.append(s.lstrip('*').strip()); continue
         if mode == 'head':
-            if lead >= 4 or (head_flush and lead == 0):
+            if head_flush and lead >= 2 and head and head[-1].endswith('。'):
+                mode = 'body'
+            elif lead >= 4 or (head_flush and lead == 0):
                 head[-1] += s; continue
-            mode = 'body'
+            else:
+                mode = 'body'
         body.append(s)
-        if lead == 2 or not paras:
+        if lead == 2 or not paras or (head_flush and lead >= 4):
             paras.append(s)
         else:
             paras[-1] += s
