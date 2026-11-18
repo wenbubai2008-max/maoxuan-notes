@@ -11,7 +11,7 @@ def main():
     data = json.load(open(os.path.join(ROOT, 'build', 'text.json'), encoding='utf-8'))
     by_title = {a['title']: a['no'] for a in B.load_articles('1')}
     by_title5 = {a['title']: a['no'] for a in B.load_articles('5')}
-    have2 = {a['no'] for a in B.load_articles('2')}
+    have = {v: {a['no'] for a in B.load_articles(str(v))} for v in (2, 3, 4)}
     n5 = 0
     # 一至四卷按各卷第一篇切分
     firsts = {'反对日本进攻的方针、办法和前途': 2, '《农村调查》的序言和跋': 3, '抗日战争胜利后的时局和我们的方针': 4}
@@ -31,13 +31,13 @@ def main():
             volno = firsts.get(x['title'], volno)
             seqs[volno] = seqs.get(volno, 0) + 1
             rec['volno'] = volno; rec['seq'] = seqs[volno]
-            if volno == 2 and seqs[2] in have2:
-                rec['v2'] = seqs[2]
+            if volno in have and seqs[volno] in have[volno]:
+                rec[f'v{volno}'] = seqs[volno]
         manifest.append(rec)
         root = '../'
         back = (f'<a class="btn-link" href="{root}v1/{v1:02d}.html">← 看这篇的注解和深读</a>' if v1 else
                 f'<a class="btn-link" href="{root}v5/{v5:02d}.html">← 看这篇的注解和分析</a>' if v5 else
-                f'<a class="btn-link" href="{root}v2/{rec["v2"]:02d}.html">← 看这篇的注解和分析</a>' if rec.get('v2') else '')
+                next((f'<a class="btn-link" href="{root}v{v}/{rec["v" + str(v)]:02d}.html">← 看这篇的注解和分析</a>' for v in (2, 3, 4) if rec.get(f'v{v}')), ''))
         head = (f'<div class="notice"><div><b>题解。</b>{B.esc(x["headnote"])}</div></div>' if x['headnote'] else '')
         paras = ''.join(f'<p>{B.esc(p)}</p>' for p in x['paras'])
         notes = ''.join(f'<li>{B.esc(n)}</li>' for n in x['notes'])

@@ -96,8 +96,8 @@ def toc(arts, root, cur_no):
             out.append(f'<div class="period">{esc(period)}</div><ol>')
         on = ' class="on"' if a['no'] == cur_no else ''
         out.append(f'<li{on}><a href="{root}v{vol}/{a["no"]:02d}.html"><span class="n">{a["no"]}</span>{esc(a["title"])}</a></li>')
-    if vol == '2':
-        out.append(f'</ol><div class="more">第二卷共 40 篇，序号是原书目录里的篇序。<a href="{root}v2/index.html">本卷脉络 →</a></div></nav>')
+    if vol in ('2', '3', '4'):
+        out.append(f'</ol><div class="more">{VOL_NAME[vol]}共 {len(arts)} 篇，序号是原书目录里的篇序。<a href="{root}v{vol}/index.html">本卷脉络 →</a></div></nav>')
     elif vol == '5':
         out.append(f'</ol><div class="more">第五卷共 70 篇，序号是原书目录里的篇序。<a href="{root}v5/index.html">本卷脉络 →</a> · <a href="{root}v5/tulong.html">“屠龙卷”专题 →</a></div></nav>')
     else:
@@ -209,14 +209,14 @@ def biglist(arts):
         f'<li><a href="v{a["vol"]}/{a["no"]:02d}.html"><span class="n">{a["no"]}</span><span class="t">{esc(a["title"])}'
         f'<span class="d">{esc(a["date"])}</span></span><span class="g">{esc(a["gist"])}</span></a></li>' for a in arts)
 
-def home_page(arts, arts5, arts2=()):
+def home_page(arts, arts5, arts2=(), arts3=(), arts4=()):
     root = ''
     items = load_text_index()
     cards = []
     for n in range(1, 6):
         years, period = VOL_INFO[n]
         total = len([t for t in items if t.get('volno') == n])
-        done = {1: len(arts), 2: len(arts2), 5: len(arts5)}.get(n, 0)
+        done = {1: len(arts), 2: len(arts2), 3: len(arts3), 4: len(arts4), 5: len(arts5)}.get(n, 0)
         if done and done >= total:
             st, cls = f'{done} 篇全部注解', 'done'
         elif done:
@@ -254,8 +254,9 @@ def resolve_links(html_, root, arts_by):
             return f'《{esc(title)}》'
         if it.get('v1'):
             return f'<a href="{root}v1/{it["v1"]:02d}.html">《{esc(title)}》</a>'
-        if it.get('v2'):
-            return f'<a href="{root}v2/{it["v2"]:02d}.html">《{esc(title)}》</a>'
+        for vv in ('2', '3', '4'):
+            if it.get('v' + vv):
+                return f'<a href="{root}v{vv}/{it["v" + vv]:02d}.html">《{esc(title)}》</a>'
         if it.get('v5'):
             return f'<a href="{root}v5/{it["v5"]:02d}.html">《{esc(title)}》</a>'
         return f'<a href="{root}text/{it["file"]}">《{esc(title)}》</a>'
@@ -273,9 +274,9 @@ def vol_index_page(n, arts_by):
     rows = []
     nann = 0
     for t in items:
-        no = t.get('v' + vol) if n in (1, 2, 5) else None
+        no = t.get('v' + vol)
         a = arts_by.get((vol, no)) if no else None
-        seq = no if n in (2, 5) else (a['no'] if a else t['seq'])
+        seq = no if n in (2, 3, 4, 5) else (a['no'] if a else t['seq'])
         if a:
             nann += 1
             rows.append(f'<li class="has-ann"><a href="{no:02d}.html"><span class="n">{seq}</span><span class="t">{esc(t["title"])}'
@@ -317,14 +318,14 @@ def method_page(arts):
     # [[v1-NN]] → 链接到篇目
     def link(m):
         vol, no = m.group(1), int(m.group(2))
-        a = next(x for x in arts + load_articles('2') + load_articles('5') if x['vol'] == vol and x['no'] == no)
+        a = next(x for x in arts + load_articles('2') + load_articles('3') + load_articles('4') + load_articles('5') if x['vol'] == vol and x['no'] == no)
         return f'<a href="v{vol}/{no:02d}.html">《{esc(a["title"])}》</a>'
     # 每条方法后面自动列出全书里标注了这条方法的篇目
-    allarts = arts + load_articles('2') + load_articles('5')
+    allarts = arts + load_articles('2') + load_articles('3') + load_articles('4') + load_articles('5')
     def backlinks(m):
         mid = m.group(1)
         out = []
-        for vol in ('1', '2', '5'):
+        for vol in ('1', '2', '3', '4', '5'):
             hits = [x for x in allarts if x['vol'] == vol and mid in x.get('methods', [])]
             if hits:
                 out.append(f'{VOL_NAME[vol]}：' + '、'.join(f'<a href="v{vol}/{x["no"]:02d}.html">{x["no"]}《{esc(x["title"])}》</a>' for x in hits))
@@ -332,7 +333,7 @@ def method_page(arts):
         blk = m.group(0)
         return blk.replace('<dt class="fail">', rel + '<dt class="fail">', 1)
     body = re.sub(r'<div class="method" id="(m\d\d)">.*?</dl>', backlinks, body, flags=re.S)
-    body = re.sub(r'\[\[v([125])-(\d\d)\]\]', link, body)
+    body = re.sub(r'\[\[v([1-5])-(\d\d)\]\]', link, body)
     return head('总论：思维方法 · 毛选 · 读书', root) + topbar(root, 'method') + f'<div class="shell wide"><main class="long">{body}</main></div>\n' + foot(root)
 
 def text_index_page():
@@ -347,7 +348,7 @@ def text_index_page():
     for name, years, lst in groups:
         body.append(f'<h2 class="vh">{name} <small>{years} · {len(lst)} 篇</small></h2><ol class="biglist textlist">')
         for t in lst:
-            tag = ''.join(f'<a class="tag-note" href="{root}v{v}/{t["v" + v]:02d}.html">注解</a>' for v in ('1', '2', '5') if t.get('v' + v))
+            tag = ''.join(f'<a class="tag-note" href="{root}v{v}/{t["v" + v]:02d}.html">注解</a>' for v in ('1', '2', '3', '4', '5') if t.get('v' + v))
             body.append(f'<li><a href="{t["file"]}"><span class="n">{t.get("seq", int(t["file"][:3]))}</span><span class="t">{esc(t["title"])}'
                         f'<span class="d">{esc(t["date"])}</span></span><span class="g">约 {t["chars"]//100/10:.1f} 千字</span></a>{tag}</li>')
         body.append('</ol>')
@@ -358,15 +359,17 @@ def main():
     arts = load_articles('1')
     arts5 = load_articles('5')
     arts2 = load_articles('2')
+    arts3 = load_articles('3')
+    arts4 = load_articles('4')
     tip = text_index_page()
     if tip:
         os.makedirs(os.path.join(ROOT, 'text'), exist_ok=True)
         open(os.path.join(ROOT, 'text', 'index.html'), 'w', encoding='utf-8').write(tip)
-    for vol, lst in (('1', arts), ('2', arts2), ('5', arts5)):
+    for vol, lst in (('1', arts), ('2', arts2), ('3', arts3), ('4', arts4), ('5', arts5)):
         os.makedirs(os.path.join(ROOT, f'v{vol}'), exist_ok=True)
         for a in lst:
             open(os.path.join(ROOT, f'v{vol}', f'{a["no"]:02d}.html'), 'w', encoding='utf-8').write(article_page(a, lst))
-    arts_by = {(a['vol'], a['no']): a for a in arts + arts2 + arts5}
+    arts_by = {(a['vol'], a['no']): a for a in arts + arts2 + arts3 + arts4 + arts5}
     tl = resolve_links(open(C('v5_tulong.html'), encoding='utf-8').read(), '../', arts_by)
     os.makedirs(os.path.join(ROOT, 'v5'), exist_ok=True)
     open(os.path.join(ROOT, 'v5', 'tulong.html'), 'w', encoding='utf-8').write(
@@ -374,10 +377,10 @@ def main():
     for n in range(1, 6):
         os.makedirs(os.path.join(ROOT, f'v{n}'), exist_ok=True)
         open(os.path.join(ROOT, f'v{n}', 'index.html'), 'w', encoding='utf-8').write(vol_index_page(n, arts_by))
-    open(os.path.join(ROOT, 'maoxuan.html'), 'w', encoding='utf-8').write(home_page(arts, arts5, arts2))
+    open(os.path.join(ROOT, 'maoxuan.html'), 'w', encoding='utf-8').write(home_page(arts, arts5, arts2, arts3, arts4))
     open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8').write(shelf_page())
     open(os.path.join(ROOT, 'method.html'), 'w', encoding='utf-8').write(method_page(arts))
-    print(f'生成 第一卷 {len(arts)} 篇 + 第二卷 {len(arts2)} 篇 + 第五卷 {len(arts5)} 篇 + 书架 + 本书首页 + 总论')
+    print(f'生成 第一卷 {len(arts)} 篇 + 第二卷 {len(arts2)} 篇 + 第三卷 {len(arts3)} 篇 + 第四卷 {len(arts4)} 篇 + 第五卷 {len(arts5)} 篇 + 书架 + 本书首页 + 总论')
 
 if __name__ == '__main__':
     main()
