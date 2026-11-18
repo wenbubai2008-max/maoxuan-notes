@@ -37,7 +37,7 @@
   <div class="compare-header">
     <div class="eyebrow">本地原文 · 在线注解</div>
     <h1>原文与分析，对照阅读</h1>
-    <p>左侧读取你自己选择的 PDF，右侧查看本站注解。PDF 只在当前浏览器内打开，不会上传到 GitHub 或网站服务器。刷新页面后需要重新选择文件。</p>
+    <p>左侧读取你自己选择的 PDF，右侧查看本站注解。《矛盾论》已提供1967年版原文网页对照；其他篇目仍可选择本地 PDF。你选择的本地文件只在浏览器内打开，不会另行上传。</p>
   </div>
   <div class="compare-controls">
     <label>选择版本
@@ -60,7 +60,7 @@
   <div class="compare-grid">
     <section class="compare-pane" aria-label="原文PDF">
       <div class="compare-pane-head"><b>左侧：原文 PDF</b><span id="page-info">第一卷</span></div>
-      <div id="empty-pdf"><p>请点击上方“选择本地原文 PDF”<br>文件只在你的设备上打开</p></div>
+      <div id="empty-pdf"><p>请点击上方“选择本地原文 PDF”<br>尚未导入网页原文的篇目仍可使用本地文件</p></div>
       <iframe id="pdf-view" title="本地原文 PDF 阅读器" hidden></iframe>
     </section>
     <section class="compare-pane" aria-label="文章注解">
@@ -74,7 +74,7 @@
       </div>
     </section>
   </div>
-  <p class="compare-help">页码说明：书内印页不等于 PDF 阅读器页码。第一卷17篇的起始页已按上传的1967年版本逐页核对；第五卷书内第1页对应PDF第10页。浏览器自带PDF工具可继续翻页、放大和搜索。</p>
+  <p class="compare-help">页码说明：书内印页不等于 PDF 阅读器页码。《矛盾论》网页文字来源于用户提供的1967年版PDF，自动提取可能存在错字或脚注排版差异；严谨引用时应核对扫描版。第五卷书内第1页对应 PDF 第10页。</p>
 </div>
 <script>
 (function(){
@@ -133,10 +133,15 @@
     if(blobUrl){
       frame.src=blobUrl+'#page='+page+'&zoom=page-width';
       frame.hidden=false;el('empty-pdf').hidden=true;
-      state.textContent='已打开本地PDF。右侧内容来自网站，左侧原文没有上传到互联网。';
+      state.textContent='当前使用你选择的本地PDF。';
+    }else if(!fifth && selected===17){
+      var hosted='originals/v1/17.html';
+      if(frame.getAttribute('src')!==hosted)frame.setAttribute('src',hosted);
+      frame.hidden=false;el('empty-pdf').hidden=true;
+      state.textContent='正在对照阅读《矛盾论》：左侧为1967年版文字提取，右侧为注解。可选择本地PDF查看影印版。';
     }else{
-      frame.hidden=true;el('empty-pdf').hidden=false;
-      state.textContent='请选择与当前版本对应的本地 PDF。'+(fifth?'第五卷目前仅支持原文翻阅。':'第一卷17篇已建立页码对应。');
+      frame.removeAttribute('src');frame.hidden=true;el('empty-pdf').hidden=false;
+      state.textContent='请选择与当前版本对应的本地 PDF。'+(fifth?'第五卷目前仅支持原文翻阅。':'其他篇目原文的网页版本尚待导入。');
     }
   }
   chooser.addEventListener('change',function(){selected=Number(chooser.value);refresh()});
