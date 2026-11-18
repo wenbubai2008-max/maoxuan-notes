@@ -40,7 +40,7 @@ def head(title, root):
 
 def topbar(root, current):
     items = [('home', '首页', f'{root}index.html'), ('v1', '第一卷', f'{root}v1/01.html'),
-             ('method', '总论：思维方法', f'{root}method.html')]
+             ('method', '总论：思维方法', f'{root}method.html'), ('compare', '原文对照', f'{root}compare.html')]
     links = ''.join(
         f'<a href="{u}"{" aria-current=\"page\"" if k == current else ""}>{t}</a>' for k, t, u in items)
     return (f'<header class="topbar"><a class="brand" href="{root}index.html">毛选读注'
@@ -138,9 +138,10 @@ def article_page(a, arts):
             f'<main><div class="eyebrow">第一卷 · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
             f'<h1>{esc(a["title"])}</h1><p class="date">（{esc(a["date"])}）</p>'
             f'<div class="meta">{meta}</div>'
+            f'<p><a class="compare-entry" href="{root}compare.html?article={a["no"]}">打开原文对照阅读 →</a></p>'
             f'<div class="tabs" role="tablist" aria-label="本篇内容">{btns}</div>'
             f'<section class="panel" id="p-text" role="tabpanel" aria-labelledby="t-text">'
-            f'<div class="notice"><div><b>原文位置。</b>正文定于 2027 年 1 月 1 日导入。现在每节先用段落提要占位，点下划线的词可以定位到右侧的注。</div></div>'
+            f'<div class="notice"><div><b>原文位置。</b>网站暂不公开刊载全文。可以<a href="{root}compare.html?article={a["no"]}">用自己的本地 PDF 对照阅读</a>；当前每节先用段落提要占位，点下划线的词可以定位到右侧注解。</div></div>'
             f'{secs}</section>\n{read}\n{bg}\n{extra_html}'
             f'<div class="pager">{"".join(prev_next)}</div></main></div>\n' + foot(root))
     return page
@@ -157,6 +158,7 @@ def home_page(arts):
 <div class="cards">
   <a class="card" href="method.html"><b>总论：思维方法</b><span>从五卷里提炼的 12 条底层逻辑，每条都标出处、用法和失灵条件。</span></a>
   <a class="card" href="v1/01.html"><b>样章：中国社会各阶级的分析</b><span>最完整的一篇，含深读、版本变化和管理视角。</span></a>
+  <a class="card" href="compare.html?article=17"><b>原文对照阅读</b><span>选择自己设备上的 PDF，左看原文，右看注解。文件不会上传。</span></a>
 </div>
 <h2 class="vh">第一卷 <small>1925—1937 · 17 篇</small></h2>
 <ol class="biglist">{rows}</ol>
