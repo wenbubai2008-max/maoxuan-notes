@@ -24,7 +24,10 @@ jobs:
 
       - name: 检查日期和状态
         id: check
+        env:
+          PW_SET: ${{ secrets.MAOXUAN_PASSWORD != '' }}
         run: |
+          if [ "$PW_SET" = "true" ]; then echo "密钥 MAOXUAN_PASSWORD：已设置"; else echo "::warning::密钥 MAOXUAN_PASSWORD 还没有设置，到时解密会失败"; fi
           today=$(TZ=Asia/Shanghai date +%Y%m%d)
           if [ "$today" -lt 20270101 ] && [ "${{ inputs.force }}" != "true" ]; then
             echo "北京时间 $today，还没到 2027-01-01，不执行。"; echo "go=no" >> $GITHUB_OUTPUT; exit 0
