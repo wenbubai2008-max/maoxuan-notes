@@ -214,7 +214,7 @@ def shelf_page():
         f'<h2>{esc(b["title"])}</h2>'
         f'<p class="bookshelf-edition">第一至五卷</p>'
         f'<div class="bookshelf-cover" aria-hidden="true"><span>{esc(b["title"])}</span></div>'
-        f'<span class="bookshelf-open">进入阅读 <span aria-hidden="true">→</span></span></a>'
+        f'</a>'
         for b in books)
     body = (f'<main class="bookshelf-home">'
             f'<h1 class="bookshelf-heading">书架</h1>'
