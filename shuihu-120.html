@@ -47,12 +47,18 @@
    list.replaceChildren(frag);empty.hidden=count!==0;
  }
  q.addEventListener("input",render);render();
+ fetch("shuihu/"+edition+"/status.json").then(r=>r.ok?r.json():null).then(progress=>{
+   if(progress && Array.isArray(progress.available)){
+     const current=progress.available.length;
+     state.textContent="120回目录 · 已缓存"+current+"/"+max+"回简体正文";
+   }
+ }).catch(()=>{});
  fetch("shuihu/"+edition+"/index.json").then(r=>r.ok?r.json():null).then(j=>{
    if(!j||!Array.isArray(j.chapters))return;
    names=new Map(j.chapters.map(c=>[Number(c.number),c.title]));
-   state.textContent="袁无涯系百二十回本 · "+names.size+"个回目";
+   if(!state.textContent.includes("已缓存"))state.textContent="袁无涯系百二十回本 · "+names.size+"个回目";
    render();
- }).catch(()=>{state.textContent="袁无涯系百二十回本 · 第1至"+max+"回"});
+ }).catch(()=>{});
 })();
 </script>
 </body></html>
