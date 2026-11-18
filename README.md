@@ -8,7 +8,7 @@
 index.html            书架首页（生成，书目见 content/books.json）
 maoxuan.html          《毛泽东选集》本书首页（生成）
 shuihu.html           《水浒传》专题首页、七十回目录与版本解说
-shuihu-read.html      《水浒传》评点对照页（只显示评论，不显示原文）
+shuihu-read.html      《水浒传》简体原文与彩色随文批注阅读页
 assets/shuihu.css     小说专题版面样式
 assets/shuihu-data.js 七十回目录和来源地址
 assets/shuihu-commentary.js 27篇已整理的点评分析和来源信息
@@ -59,9 +59,10 @@ python3 tools/build.py
 ## 水浒传
 
 - 专题首页：`shuihu.html`，按七十回目录组织评点。
-- 评析页：`shuihu-read.html?chapter=N`，**不展示小说正文**。
+- 阅读页：`shuihu-read.html?chapter=N`，显示金圣叹七十回本的**简体原文**。金圣叹原批作为金色随文标记，与容与堂（绿色）、袁无涯本（蓝色）、本站分析（紫色）并列，但严格区分直接原批与研究概括。
 - 评析数据：`assets/shuihu-commentary.js`，现有 27 篇本站独立分析；其余章节暂标为“待整理”。
 - 颜色：赭金（金圣叹）、青绿（容与堂评点）、靛蓝（袁无涯本）、紫色（本站分析）。未核实到的某回古人批语留空，不能冒充原批。
 - `assets/shuihu-data.js` 保留七十回及楔子目录；不同底本的回次可能不同。
 - 容与堂和袁无涯本均署名“李卓吾评”，归属在学界有争论；本站优先标具体刊本而非确定作者。
-- 研究资料见 `shuihu.html#editions` 及各篇评析页底部引用，正文不从外部网站实时抓取。
+- `tools/fetch_shuihu.py` 从维基文库金圣叹七十回本提取原文和金批，使用 OpenCC 转为简体，写入 `shuihu/text/000.json` 至 `070.json`；`.github/workflows/shuihu-text.yml` 负责执行。受维基文库速率限制，部分章节可能暂缺静态缓存；网页提供实时读取与原始来源链接作为回退。已缓存章节以 `shuihu/text/status.json` 为准。
+- 研究资料见 `shuihu.html#editions`，不要将其他版本的评论冒充为金圣叹原批。
