@@ -210,9 +210,9 @@ def home_page(arts):
 def shelf_page():
     books = json.load(open(C('books.json'), encoding='utf-8'))
     cards = ''.join(
-        f'<a class="bookshelf-entry" href="{esc(b["href"])}" aria-label="阅读{esc(b["title"])}">'
+        f'<a class="bookshelf-entry shelf-{esc(b["id"])}" href="{esc(b["href"])}" aria-label="阅读{esc(b["title"])}">'
         f'<h2>{esc(b["title"])}</h2>'
-        f'<p class="bookshelf-edition">第一至五卷</p>'
+        f'<p class="bookshelf-edition">{esc(b.get("shelf_subtitle", b.get("edition", "")))}</p>'
         f'<div class="bookshelf-cover" aria-hidden="true"><span>{esc(b["title"])}</span></div>'
         f'</a>'
         for b in books)
