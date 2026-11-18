@@ -26,7 +26,7 @@ SOURCE_TITLE = "水滸傳_(70回本)"
 API = "https://zh.wikisource.org/w/api.php"
 HEADERS = {"User-Agent": "ReadingNotes/1.0 (educational static reading site; contact via GitHub wenbubai2008-max/reading)"}
 CC = OpenCC("t2s")
-NOTE = re.compile(r"〖([\s\S]*?)〗")
+NOTE = re.compile(r"[〖【]([\s\S]*?)[〗】]")
 EXCLUDE = ("table", "nav", "aside", "footer", "sup", ".noprint", ".printfooter", ".mw-editsection", ".reference", ".reflist", ".ws-noexport")
 
 def clean(s: str) -> str:
@@ -87,7 +87,7 @@ def extract(number: int, html: str) -> dict:
         tokens.append(raw[pos:match.start()])
         note_text = clean(match.group(1))
         note_kind = "夹批"
-        if re.match(r"^\s*(?:总批|總批|眉批|夹批|夾批)[:：]", note_text):
+        if re.match(r"^\s*(?:总批|總批|眉批|夹批|夾批|金批)\s*[:：]", note_text):
             note_kind, note_text = re.split(r"[:：]", note_text, maxsplit=1)
             note_kind = CC.convert(note_kind.strip())
         if note_text.strip():
@@ -99,7 +99,7 @@ def extract(number: int, html: str) -> dict:
     plain = "".join(tokens)
     paragraphs = [p.strip() for p in plain.split("\n\n") if p.strip()]
     # Check for remnants of unclosed note markup before publishing.
-    if "〖" in plain or "〗" in plain:
+    if any(token in plain for token in ("〖", "〗", "【", "】")):
         raise ValueError(f"Chapter {number}: unbalanced original annotations")
     total_len = len(re.sub(r"⟦J\d+⟧", "", plain))
     if total_len < 700:
@@ -133,8 +133,9 @@ def main():
     if not all(0 <= n <= 70 for n in nums):
         p.error("Chapter must be 0–70")
     errors = []
+    error_reasons = {}
     # Low concurrency to respect source capacity; independent files allow incremental retries.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         futures = {pool.submit(process, n): n for n in nums}
         for future in concurrent.futures.as_completed(futures):
             number = futures[future]
@@ -144,7 +145,8 @@ def main():
             except Exception as e:
                 print(f"FAIL {number:03}: {e}", file=sys.stderr, flush=True)
                 errors.append(number)
-    (OUT / "status.json").write_text(json.dumps({"available": [int(p.stem) for p in sorted(OUT.glob("[0-9][0-9][0-9].json"))], "failed": errors}, ensure_ascii=False), encoding="utf-8")
+                error_reasons[str(number)] = str(e)[:320]
+    (OUT / "status.json").write_text(json.dumps({"available": [int(p.stem) for p in sorted(OUT.glob("[0-9][0-9][0-9].json"))], "failed": errors, "errors": error_reasons}, ensure_ascii=False), encoding="utf-8")
     if errors:
         print(f"Chapters needing review/retry: {errors}", file=sys.stderr)
         if len(errors) == len(nums):
