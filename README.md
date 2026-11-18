@@ -16,7 +16,9 @@ tools/build.py        生成网站：python3 tools/build.py
 tools/split_corpus.py 把本地 PDF 切成单篇 JSON
 ```
 
-**改内容只改 `content/`，然后运行 `python3 tools/build.py`，不要直接改生成的 HTML。**
+**改内容只改 `content/`，不要直接改生成的 HTML。**
+
+在 GitHub 网页上改完 `content/` 里的文件并提交后，Actions 会自动运行 `tools/build.py` 重新生成网页（约 1–2 分钟），再由 Pages 发布。在本地改的话，运行 `python3 tools/build.py` 后一起提交。
 
 ## 每篇 JSON 的字段
 
