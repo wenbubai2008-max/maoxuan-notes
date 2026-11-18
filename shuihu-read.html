@@ -37,6 +37,7 @@
   </nav>
   <p class="jin-credit">金圣叹七十回评本，依据维基文库文本转换为简体。金批保留原文，未加入其他版本的评语。自动转换仍可能有个别文字或分段问题，引用时请核对底本：<a id="source-link" href="https://zh.wikisource.org/wiki/水滸傳_(70回本)" target="_blank" rel="noopener noreferrer">查看底本</a>。</p>
 </main>
+<script src="assets/shuihu-text-clean.js?v=1"></script>
 <script src="assets/shuihu-data.js"></script>
 <script>
 (function(){
@@ -89,7 +90,7 @@
      inline.setAttribute("aria-label","金圣叹"+kind+"："+content);
      return {element:inline,block:false};
    }
-   for(const paragraph of data.paragraphs){
+   for(const paragraph of (window.SHUIHU_TEXT_CLEAN?.cleanParagraphs(data.paragraphs)||data.paragraphs)){
      let p=el("p","jin-text");
      const parts=paragraph.split(/(⟦J\d+⟧)/g);
      for(const part of parts){
