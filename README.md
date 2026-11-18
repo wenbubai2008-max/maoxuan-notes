@@ -84,3 +84,12 @@ python3 tools/build.py
 ## 书架导航
 
 书架只显示《毛泽东选集》和《水浒传》两本书。点击《水浒传》进入 `shuihu.html` 选择金圣叹七十回本、容与堂百回本或袁无涯系百二十回本。各自目录分别是 `shuihu-70.html`、`shuihu-100.html`、`shuihu-120.html`；原文与批注数据不合并、不互换。七十回本阅读页 `shuihu-read.html` 返回到 `shuihu-70.html#chapters`。
+
+
+## 水浒传页面排版与点评（2026-11-18 修订）
+
+- 金圣叹七十回本：`shuihu-read.html` 不再把“金”字批注按钮塞在小说句子里。正文独立成段，当前段的金批在其下方以赭金色完整显示；同一段多则批语按顺序分列，保留原批内容及简短原文定位。
+- 容与堂百回本：`shuihu-other-read.html?edition=100&chapter=N` 从对应底本中识别可查证的“李载贽曰”“李秃翁曰”“卓老曰”等附评，显示为青绿色的**底本附评**，只保留原文署名、不确定其真实作者。本站独立评论用紫色。
+- 百二十回本：`?edition=120&chapter=N` 没有完整可核实的逐回历史批本电子标注。现在每回至少提供本站评析或回目导读，全部直接显示为紫色，不能称为袁无涯原批。
+- `assets/shuihu-guides.js`：百回本100回和百二十回本120回均有阅读点评/导读，其中重点章节另有基于人物和事件的独立分析；有些其余回目只能先作为待深化的回目导读。
+- `assets/shuihu-text-clean.js` 和 `tools/clean_shuihu_text.py`：仅删除小说结尾来自维基文库的版权模板和 `Public domain / falsefalse` 标志；小说正文、诗词、结尾及真实附评不删除。`.github/workflows/shuihu-cleanup.yml` 负责在仓库中批量清理此前缓存。
