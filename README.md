@@ -1,6 +1,6 @@
 # 读书 · 毛泽东选集
 
-《毛泽东选集》逐篇注解与《水浒传》金圣叹七十回本阅读。网站：https://wenbubai2008-max.github.io/reading/
+《毛泽东选集》逐篇注解与《水浒传》多家评点研究。网站：https://wenbubai2008-max.github.io/reading/
 
 ## 结构
 
@@ -8,9 +8,10 @@
 index.html            书架首页（生成，书目见 content/books.json）
 maoxuan.html          《毛泽东选集》本书首页（生成）
 shuihu.html           《水浒传》专题首页、七十回目录与版本解说
-shuihu-read.html      《水浒传》阅读页（从维基文库实时读取金批七十回本）
+shuihu-read.html      《水浒传》评点对照页（只显示评论，不显示原文）
 assets/shuihu.css     小说专题版面样式
 assets/shuihu-data.js 七十回目录和来源地址
+assets/shuihu-commentary.js 27篇已整理的点评分析和来源信息
 method.html           总论：思维方法（生成）
 v1/NN.html            第一卷各篇（生成）
 assets/site.css/.js   共享样式和脚本
@@ -57,4 +58,10 @@ python3 tools/build.py
 
 ## 水浒传
 
-以金圣叹评《第五才子书施耐庵水浒传》七十回本为阅读主线，目录含楔子及七十回。通过维基文库 MediaWiki API 实时读取公有领域原文，尝试将原文和 `〖…〗` 形式的金批分开显示；如访问源站失败，提供该回原文链接回退。不同回目的页面及评点排版仍需人工抽样校对。版本介绍附容与堂百回本与袁无涯百二十回本的对读入口；三个版本不可混用为同一底本。
+- 专题首页：`shuihu.html`，按七十回目录组织评点。
+- 评析页：`shuihu-read.html?chapter=N`，**不展示小说正文**。
+- 评析数据：`assets/shuihu-commentary.js`，现有 27 篇本站独立分析；其余章节暂标为“待整理”。
+- 颜色：赭金（金圣叹）、青绿（容与堂评点）、靛蓝（袁无涯本）、紫色（本站分析）。未核实到的某回古人批语留空，不能冒充原批。
+- `assets/shuihu-data.js` 保留七十回及楔子目录；不同底本的回次可能不同。
+- 容与堂和袁无涯本均署名“李卓吾评”，归属在学界有争论；本站优先标具体刊本而非确定作者。
+- 研究资料见 `shuihu.html#editions` 及各篇评析页底部引用，正文不从外部网站实时抓取。
