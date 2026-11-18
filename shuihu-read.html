@@ -85,7 +85,7 @@
  $("next-chapter").href=n===70?"shuihu.html#chapters":"shuihu-read.html?chapter="+(n+1);
  $("next-chapter").textContent=n===70?"目录 →":chapters[n+1].label+" →";
  const sourcePage="水滸傳_(70回本)/"+ch.wiki;
- const sourceURL="https://zh.wikisource.org/zh-hans/"+encodeURIComponent(sourcePage);
+ const sourceURL="https://zh.wikisource.org/zh-hans/"+sourcePage.split("/").map(encodeURIComponent).join("/");
  $("source-link").href=sourceURL;
  const labels={gold:"金圣叹",rong:"容与堂",yuan:"袁无涯本",editor:"本站分析"};
  const words={gold:"金",rong:"容",yuan:"袁",editor:"析"};
@@ -222,20 +222,15 @@
    const documentObject=new DOMParser().parseFromString(raw,"text/html");
    const root=documentObject.querySelector(".mw-parser-output")||documentObject.body;
    const ps=[...root.querySelectorAll("p")].filter(p=>!p.closest("table, nav, footer"));
-   const paragraphs=[],jin_notes=[];
+   const paragraphs=[];
    ps.forEach(p=>{
-     let content=(p.textContent||"").trim();
-     if(!content||content.length<12)return;
-     content=content.replace(/[〖【]([\s\S]*?)[〗】]/g,(all,note)=>{
-       const i=jin_notes.length;
-       const a=note.match(/^\s*(总批|夹批|眉批)[:：]([\s\S]*)$/);
-       jin_notes.push({id:i,kind:a?a[1]:"夹批",text:a?a[2].trim():note.trim()});
-       return "⟦J"+i+"⟧";
-     });
-     paragraphs.push(content);
+     const content=(p.textContent||"").trim();
+     if(content.length>=12)paragraphs.push(content);
    });
    if(paragraphs.join("").length<500)throw Error("无法识别外部原文格式");
-   return {paragraphs,jin_notes,source:sourceURL,original_characters:paragraphs.join("").length};
+   // Let normalizeAnnotations operate on the entire chapter: a 总批 can
+   // extend across many paragraphs and must not leak into the novel text.
+   return {paragraphs,jin_notes:[],source:sourceURL,original_characters:paragraphs.join("").length};
  }
  async function load(){
    try{
