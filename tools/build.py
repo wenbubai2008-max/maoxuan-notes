@@ -10,6 +10,7 @@
 import hashlib, html, json, os, re, glob
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = 'wenbubai2008-max/reading'
 C = lambda *p: os.path.join(ROOT, 'content', *p)
 
 METHOD_NAMES = {
@@ -162,7 +163,8 @@ def article_page(a, arts):
     if idx + 1 < len(arts):
         n = arts[idx + 1]; prev_next.append(f'<a href="{n["no"]:02d}.html">{esc(n["title"])} →</a>')
     page = (head(f'{a["title"]} · 毛选 · 读书', root) + topbar(root, 'v1') + '<div class="shell">' + toc(arts, root, a['no']) +
-            (f'<main data-para="{root}text/para/v1-{a["no"]:02d}.json">' if os.path.exists(os.path.join(ROOT, 'text', 'para', f'v1-{a["no"]:02d}.json')) else '<main>') +
+            f'<main data-root="{root}" data-repo="{REPO}" data-notes="content/notes/v1-{a["no"]:02d}.json"' +
+            (f' data-para="{root}text/para/v1-{a["no"]:02d}.json">' if os.path.exists(os.path.join(ROOT, 'text', 'para', f'v1-{a["no"]:02d}.json')) else '>') +
             f'<div class="eyebrow">第一卷 · 第 {a["no"]} 篇 · {esc(a["period"])}</div>'
             f'<h1>{esc(a["title"])}</h1><p class="date">（{esc(a["date"])}）</p>'
             f'<div class="meta">{meta}</div>'
@@ -170,10 +172,16 @@ def article_page(a, arts):
             f'<section class="panel" id="p-text" role="tabpanel" aria-labelledby="t-text">'
             '<form class="orig-bar" id="orig-bar" hidden><label for="orig-pw">输入密码，在每一节下面直接显示对应的原文段落</label>'
             '<div class="row"><input id="orig-pw" type="password" autocomplete="current-password" placeholder="密码">'
-            '<button type="submit">显示原文</button></div>'
+            '<button type="submit">确定</button></div>'
             '<label class="rem"><input type="checkbox" id="orig-rem" checked> 在这台设备上记住</label><p class="err" id="orig-err" hidden>密码不对，请再试一次。</p></form>'
             + (f'<div class="notice"><div><b>原文。</b><a href="{text_link_for(a["no"], root)}">阅读这篇的原文 →</a>{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>' if text_link_for(a['no'], root) else '<div class="notice"><div>下面是分节提要和注解，点下划线的词可以定位到右侧的注。</div></div>') +
+            f'<p class="mx-notes-entry"><a href="#" id="mx-notes-btn">写笔记</a></p>'
             f'{secs}</section>\n{read}\n{bg}\n{extra_html}'
+            '<dialog id="mx-token" class="mx-dlg"><h3>GitHub 令牌</h3>'
+            '<p>笔记会直接保存到你的 GitHub 仓库。粘贴一个只允许修改本仓库内容的令牌，它只保存在这台设备的浏览器里。</p>'
+            '<input id="mx-token-in" type="password" placeholder="github_pat_…" autocomplete="off">'
+            '<div class="row"><button type="button" id="mx-token-save">保存</button><button type="button" id="mx-token-clear" class="ghost">清除</button>'
+            '<button type="button" id="mx-token-cancel" class="ghost">取消</button></div></dialog>'
             f'<div class="pager">{"".join(prev_next)}</div></main></div>\n' + foot(root))
     return page
 
