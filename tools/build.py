@@ -233,8 +233,6 @@ def home_page(arts, arts5, arts2=(), arts3=(), arts4=()):
 <div class="volgrid">{"".join(cards)}</div>
 <div class="cards">
   <a class="card" href="method.html"><b>总论：思维方法</b><span>从五卷里提炼的 12 条底层逻辑，每条都标出处、用法和失灵条件。</span></a>
-  <a class="card" href="v1/01.html"><b>样章：中国社会各阶级的分析</b><span>最完整的一篇，含深读、版本变化和管理视角。</span></a>
-  <a class="card" href="text/index.html"><b>原文目录</b><span>五卷全部 {len(items)} 篇原文{"（2026 年 12 月 31 日前需要密码）" if text_locked() else ""}。</span></a>
 </div>
 </main></div>
 
